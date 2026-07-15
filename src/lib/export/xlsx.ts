@@ -1,5 +1,6 @@
 import ExcelJS from "exceljs";
 import type { Field } from "@/lib/forms/schema";
+import { isInputField } from "@/lib/forms/schema";
 
 type Submission = {
   answers: Record<string, string | string[]>;
@@ -18,7 +19,9 @@ export async function buildSubmissionsWorkbook(
   fields: Field[],
   submissions: Submission[]
 ) {
-  const orderedFields = [...fields].sort((a, b) => a.order - b.order);
+  const orderedFields = [...fields]
+    .filter(isInputField)
+    .sort((a, b) => a.order - b.order);
 
   const workbook = new ExcelJS.Workbook();
   const sheet = workbook.addWorksheet(formTitle.slice(0, 31) || "Submissions");

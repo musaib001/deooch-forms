@@ -30,12 +30,12 @@ export function FieldList({
     onChange(next.map((f, i) => ({ ...f, order: i })));
   }
 
-  function addField() {
+  function add(type: Field["type"]) {
     onChange([
       ...fields,
       {
         id: newFieldId(),
-        type: "text",
+        type,
         label: "",
         required: false,
         order: fields.length,
@@ -45,23 +45,41 @@ export function FieldList({
 
   return (
     <div className="flex flex-col gap-3">
+      {fields.length === 0 && (
+        <div className="rounded-xl border border-dashed border-border bg-card/50 px-4 py-8 text-center text-sm text-muted-foreground">
+          No fields yet. Add your first field below.
+        </div>
+      )}
+
       {fields.map((field, i) => (
         <FieldEditor
           key={field.id}
           field={field}
+          index={i}
+          total={fields.length}
           onChange={(f) => update(i, f)}
           onRemove={() => remove(i)}
           onMoveUp={() => move(i, -1)}
           onMoveDown={() => move(i, 1)}
         />
       ))}
-      <button
-        type="button"
-        onClick={addField}
-        className="self-start rounded border px-3 py-1 text-sm hover:bg-gray-50"
-      >
-        + Add field
-      </button>
+
+      <div className="flex flex-wrap gap-2">
+        <button
+          type="button"
+          onClick={() => add("text")}
+          className="inline-flex items-center gap-1.5 rounded-lg border border-border bg-card px-3.5 py-2 text-sm font-medium text-foreground shadow-sm transition-colors hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+        >
+          + Add field
+        </button>
+        <button
+          type="button"
+          onClick={() => add("heading")}
+          className="inline-flex items-center gap-1.5 rounded-lg border border-border bg-card px-3.5 py-2 text-sm font-medium text-muted-foreground shadow-sm transition-colors hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+        >
+          + Add section heading
+        </button>
+      </div>
     </div>
   );
 }

@@ -8,7 +8,12 @@ export default async function MembersPage() {
 
   return (
     <div>
-      <h1 className="mb-6 text-xl font-semibold">Members</h1>
+      <h1 className="text-2xl font-bold tracking-tight text-foreground">
+        Members
+      </h1>
+      <p className="mb-6 mt-0.5 text-sm text-muted-foreground">
+        Invite teammates by their Google email. They can build and edit forms.
+      </p>
       <MembersTable />
     </div>
   );

@@ -1,24 +1,48 @@
 import { z } from "zod";
 
+// `heading` is a display-only section title (no input, no answer). All other
+// types collect a value.
 export const FIELD_TYPES = [
   "text",
   "textarea",
   "email",
+  "phone",
   "number",
   "select",
   "radio",
   "checkbox",
   "date",
   "file",
+  "heading",
 ] as const;
 
 export type FieldType = (typeof FIELD_TYPES)[number];
+
+export const INPUT_FIELD_TYPES = FIELD_TYPES.filter((t) => t !== "heading");
+
+export const CHOICE_FIELD_TYPES: FieldType[] = ["select", "radio", "checkbox"];
+
+export const FIELD_TYPE_LABELS: Record<FieldType, string> = {
+  text: "Short text",
+  textarea: "Long text",
+  email: "Email",
+  phone: "Phone",
+  number: "Number",
+  select: "Dropdown",
+  radio: "Single choice",
+  checkbox: "Multiple choice",
+  date: "Date",
+  file: "File link",
+  heading: "Section heading",
+};
 
 export const fieldSchema = z.object({
   id: z.string(),
   type: z.enum(FIELD_TYPES),
   label: z.string().min(1),
   required: z.boolean().default(false),
+  placeholder: z.string().optional(),
+  helpText: z.string().optional(),
   options: z.array(z.string()).optional(),
   order: z.number(),
 });
@@ -43,4 +67,8 @@ export const updateFormSchema = z.object({
 
 export function newFieldId() {
   return crypto.randomUUID();
+}
+
+export function isInputField(field: Field) {
+  return field.type !== "heading";
 }

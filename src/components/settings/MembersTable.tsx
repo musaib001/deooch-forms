@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { buttonPrimaryClass, inputClass } from "@/lib/ui";
 
 type Item = {
   id: string;
@@ -62,53 +63,111 @@ export function MembersTable() {
         <input
           type="email"
           required
+          autoComplete="email"
+          spellCheck={false}
           placeholder="teammate@company.com"
           value={email}
           onChange={(e) => setEmail(e.target.value)}
-          className="flex-1 rounded border px-3 py-2"
+          className={inputClass}
         />
-        <button
-          disabled={loading}
-          className="rounded bg-black px-4 py-2 text-white disabled:opacity-50"
-        >
-          Invite
+        <button disabled={loading} className={buttonPrimaryClass + " shrink-0"}>
+          {loading ? "Inviting…" : "Invite"}
         </button>
       </form>
 
-      <div>
-        <h2 className="mb-2 text-sm font-medium text-gray-500">Members</h2>
-        <ul className="flex flex-col gap-1">
-          {members.map((m) => (
-            <li key={m.id} className="flex items-center justify-between text-sm">
-              <span>
-                {m.email} <span className="text-gray-400">({m.role})</span>
-              </span>
-              {m.role !== "owner" && (
-                <button onClick={() => remove(m)} className="text-red-600">
-                  Remove
-                </button>
-              )}
-            </li>
-          ))}
-        </ul>
-      </div>
+      <Section title="Members">
+        {members.map((m) => (
+          <Row
+            key={m.id}
+            label={m.email}
+            meta={m.role}
+            action={
+              m.role !== "owner" ? (
+                <RemoveButton onClick={() => remove(m)} label="Remove" />
+              ) : (
+                <span className="text-xs text-muted-foreground">Owner</span>
+              )
+            }
+          />
+        ))}
+      </Section>
 
-      <div>
-        <h2 className="mb-2 text-sm font-medium text-gray-500">Pending invites</h2>
-        <ul className="flex flex-col gap-1">
-          {pendingInvites.map((i) => (
-            <li key={i.id} className="flex items-center justify-between text-sm">
-              <span>{i.email}</span>
-              <button onClick={() => remove(i)} className="text-red-600">
-                Cancel
-              </button>
-            </li>
-          ))}
-          {!pendingInvites.length && (
-            <li className="text-sm text-gray-400">None</li>
-          )}
-        </ul>
+      <Section title="Pending invites" emptyLabel="No pending invites">
+        {pendingInvites.map((i) => (
+          <Row
+            key={i.id}
+            label={i.email}
+            action={<RemoveButton onClick={() => remove(i)} label="Cancel" />}
+          />
+        ))}
+      </Section>
+    </div>
+  );
+}
+
+function Section({
+  title,
+  emptyLabel,
+  children,
+}: {
+  title: string;
+  emptyLabel?: string;
+  children: React.ReactNode;
+}) {
+  const isEmpty = Array.isArray(children) && children.length === 0;
+  return (
+    <div>
+      <h2 className="mb-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+        {title}
+      </h2>
+      <div className="divide-y divide-border overflow-hidden rounded-xl border border-border bg-card">
+        {isEmpty ? (
+          <p className="px-4 py-3 text-sm text-muted-foreground">
+            {emptyLabel ?? "Nothing here yet"}
+          </p>
+        ) : (
+          children
+        )}
       </div>
     </div>
+  );
+}
+
+function Row({
+  label,
+  meta,
+  action,
+}: {
+  label: string;
+  meta?: string;
+  action: React.ReactNode;
+}) {
+  return (
+    <div className="flex items-center justify-between px-4 py-3 text-sm">
+      <span className="text-foreground">
+        {label}
+        {meta && (
+          <span className="ml-2 capitalize text-muted-foreground">({meta})</span>
+        )}
+      </span>
+      {action}
+    </div>
+  );
+}
+
+function RemoveButton({
+  onClick,
+  label,
+}: {
+  onClick: () => void;
+  label: string;
+}) {
+  return (
+    <button
+      onClick={onClick}
+      className="rounded-md px-2 py-1 text-xs font-medium text-destructive transition-colors hover:bg-destructive-subtle focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+    >
+      {label}
+    </button>
   );
 }

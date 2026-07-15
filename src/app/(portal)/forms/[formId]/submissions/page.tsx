@@ -1,6 +1,7 @@
 import { notFound } from "next/navigation";
+import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
-import { SubmissionsTable } from "@/components/submissions/SubmissionsTable";
+import { SubmissionsView } from "@/components/submissions/SubmissionsView";
 
 export default async function FormSubmissionsPage({
   params,
@@ -21,18 +22,29 @@ export default async function FormSubmissionsPage({
 
   if (!form) notFound();
 
+  const count = submissions?.length ?? 0;
+
   return (
     <div>
-      <div className="mb-6 flex items-center justify-between">
-        <h1 className="text-xl font-semibold">{form.title} — submissions</h1>
-        <a
-          href={`/api/forms/${formId}/export`}
-          className="rounded bg-black px-4 py-2 text-sm text-white"
-        >
-          Export to Excel
-        </a>
+      <Link
+        href={`/forms/${formId}`}
+        className="mb-4 inline-block text-sm text-muted-foreground hover:text-foreground"
+      >
+        ← Back to form
+      </Link>
+      <div className="mb-6">
+        <h1 className="text-2xl font-bold tracking-tight text-foreground">
+          {form.title}
+        </h1>
+        <p className="mt-0.5 text-sm text-muted-foreground">
+          {count} {count === 1 ? "response" : "responses"}
+        </p>
       </div>
-      <SubmissionsTable fields={form.fields} submissions={submissions ?? []} />
+      <SubmissionsView
+        formId={formId}
+        fields={form.fields}
+        submissions={submissions ?? []}
+      />
     </div>
   );
 }

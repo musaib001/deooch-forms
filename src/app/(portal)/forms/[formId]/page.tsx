@@ -2,6 +2,7 @@ import { notFound } from "next/navigation";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { FormBuilder } from "@/components/forms/FormBuilder";
+import { buttonSecondaryClass } from "@/lib/ui";
 
 export default async function EditFormPage({
   params,
@@ -20,11 +21,19 @@ export default async function EditFormPage({
 
   return (
     <div>
-      <div className="mb-6 flex items-center justify-between">
-        <h1 className="text-xl font-semibold">{form.title}</h1>
+      <Link
+        href="/dashboard"
+        className="mb-4 inline-block text-sm text-muted-foreground hover:text-foreground"
+      >
+        ← Back to forms
+      </Link>
+      <div className="mb-6 flex items-start justify-between gap-4">
+        <h1 className="text-2xl font-bold tracking-tight text-foreground">
+          {form.title}
+        </h1>
         <Link
           href={`/forms/${form.id}/submissions`}
-          className="text-sm underline"
+          className={buttonSecondaryClass}
         >
           View submissions
         </Link>
