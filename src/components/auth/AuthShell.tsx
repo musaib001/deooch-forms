@@ -23,8 +23,36 @@ const FEATURES = [
 
 export function AuthShell({ children }: { children: React.ReactNode }) {
   return (
-    <div className="grid min-h-screen grid-cols-1 lg:grid-cols-[1.1fr_1fr]">
-      {/* Brand panel */}
+    <div className="flex min-h-screen flex-col lg:grid lg:grid-cols-[1.1fr_1fr]">
+      {/* Mobile brand header (compact, dark) */}
+      <div className="bg-foreground px-6 pb-8 pt-10 lg:hidden">
+        <Link href="/" className="flex items-center gap-2.5">
+          <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-brand text-sm font-bold text-brand-foreground">
+            d
+          </span>
+          <span className="text-base font-bold tracking-tight text-white">
+            deoochform
+          </span>
+        </Link>
+        <p className="mt-6 text-xs font-semibold uppercase tracking-widest text-brand">
+          AI-native form builder
+        </p>
+        <h1 className="mt-2 text-3xl font-extrabold leading-[1.1] tracking-tight text-white">
+          Forms that build themselves.
+        </h1>
+        <ul className="mt-5 flex flex-wrap gap-x-4 gap-y-2">
+          {FEATURES.map(({ title }) => (
+            <li key={title} className="flex items-center gap-1.5 text-sm text-white/70">
+              <span className="text-brand">
+                <CheckIcon />
+              </span>
+              {title}
+            </li>
+          ))}
+        </ul>
+      </div>
+
+      {/* Desktop brand panel */}
       <aside className="relative hidden flex-col justify-between bg-foreground px-10 py-10 lg:flex xl:px-16">
         <Link href="/" className="flex items-center gap-2.5">
           <span className="flex h-9 w-9 items-center justify-center rounded-lg bg-brand text-base font-bold text-brand-foreground">
@@ -65,23 +93,27 @@ export function AuthShell({ children }: { children: React.ReactNode }) {
       </aside>
 
       {/* Form panel */}
-      <main className="flex flex-col items-center justify-center bg-background px-6 py-12">
-        <div className="w-full max-w-sm">
-          <Link
-            href="/"
-            className="mb-8 flex items-center justify-center gap-2 lg:hidden"
-          >
-            <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-brand text-sm font-bold text-brand-foreground">
-              d
-            </span>
-            <span className="text-base font-bold tracking-tight text-foreground">
-              deoochform
-            </span>
-          </Link>
-          {children}
-        </div>
+      <main className="flex flex-1 flex-col items-center justify-center bg-background px-6 py-10 sm:py-12">
+        <div className="w-full max-w-sm">{children}</div>
       </main>
     </div>
+  );
+}
+
+function CheckIcon() {
+  return (
+    <svg
+      className="h-3.5 w-3.5"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth={3}
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden
+    >
+      <path d="M20 6 9 17l-5-5" />
+    </svg>
   );
 }
 
