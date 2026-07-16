@@ -2,6 +2,7 @@ import { notFound } from "next/navigation";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { FormBuilder } from "@/components/forms/FormBuilder";
+import { DeleteFormButton } from "@/components/forms/DeleteFormButton";
 import { buttonSecondaryClass } from "@/lib/ui";
 
 export default async function EditFormPage({
@@ -31,12 +32,15 @@ export default async function EditFormPage({
         <h1 className="text-2xl font-bold tracking-tight text-foreground">
           {form.title}
         </h1>
-        <Link
-          href={`/forms/${form.id}/submissions`}
-          className={buttonSecondaryClass}
-        >
-          View submissions
-        </Link>
+        <div className="flex shrink-0 items-center gap-2">
+          <Link
+            href={`/forms/${form.id}/submissions`}
+            className={buttonSecondaryClass}
+          >
+            View submissions
+          </Link>
+          <DeleteFormButton formId={form.id} formTitle={form.title} />
+        </div>
       </div>
       <FormBuilder existing={form} />
     </div>

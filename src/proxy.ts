@@ -2,7 +2,7 @@ import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
 
 const PUBLIC_PREFIXES = ["/auth/", "/f/", "/api/mcp"];
-const PUBLIC_PATHS = ["/", "/login"];
+const PUBLIC_PATHS = ["/", "/login", "/signup"];
 const PUBLIC_SUBMIT_ROUTE = /^\/api\/forms\/[^/]+\/submit$/;
 
 function isPublicPath(pathname: string) {

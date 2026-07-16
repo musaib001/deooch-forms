@@ -3,6 +3,7 @@ import { z } from "zod";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { fieldSchema, formStatusSchema } from "@/lib/forms/schema";
 import { newFormSlug } from "@/lib/forms/slug";
+import { FREE_FORM_LIMIT } from "@/lib/forms/limits";
 import type { McpActor } from "./auth";
 
 function publicUrl(slug: string) {
@@ -16,6 +17,11 @@ function textResult(data: unknown) {
 export function createMcpServer(actor: McpActor) {
   const server = new McpServer({ name: "deoochform", version: "1.0.0" });
   const db = createAdminClient();
+  // Owner/Member tokens keep full team-wide access (unchanged behavior).
+  // Free-tier tokens are scoped to only the forms/submissions they own —
+  // the admin client bypasses RLS, so every free-actor query below adds an
+  // explicit created_by filter to compensate.
+  const isTrusted = actor.role === "owner" || actor.role === "member";
 
   server.registerTool(
     "create_form",
@@ -28,6 +34,18 @@ export function createMcpServer(actor: McpActor) {
       },
     },
     async ({ title, description, fields }) => {
+      if (!isTrusted) {
+        const { count } = await db
+          .from("forms")
+          .select("id", { count: "exact", head: true })
+          .eq("created_by", actor.id);
+        if ((count ?? 0) >= FREE_FORM_LIMIT) {
+          return textResult({
+            error: `Free accounts are limited to ${FREE_FORM_LIMIT} forms.`,
+          });
+        }
+      }
+
       const slug = newFormSlug();
       const { data, error } = await db
         .from("forms")
@@ -64,20 +82,21 @@ export function createMcpServer(actor: McpActor) {
       },
     },
     async ({ formId, ...changes }) => {
+      let query = db
+        .from("forms")
+        .update({ ...changes, updated_by: actor.id })
+        .eq("id", formId);
+      if (!isTrusted) query = query.eq("created_by", actor.id);
+
+      const { data, error } = await query.select("id, slug, updated_at").single();
+      if (error) return textResult({ error: "Form not found." });
+
       if (changes.fields) {
         await db
           .from("form_versions")
           .insert({ form_id: formId, fields: changes.fields, edited_by: actor.id });
       }
 
-      const { data, error } = await db
-        .from("forms")
-        .update({ ...changes, updated_by: actor.id })
-        .eq("id", formId)
-        .select("id, slug, updated_at")
-        .single();
-
-      if (error) return textResult({ error: error.message });
       return textResult({
         formId: data.id,
         slug: data.slug,
@@ -94,13 +113,12 @@ export function createMcpServer(actor: McpActor) {
       inputSchema: { formId: z.string() },
     },
     async ({ formId }) => {
-      const { data, error } = await db
-        .from("forms")
-        .select("*")
-        .eq("id", formId)
-        .single();
+      let query = db.from("forms").select("*").eq("id", formId);
+      if (!isTrusted) query = query.eq("created_by", actor.id);
 
-      if (error) return textResult({ error: error.message });
+      const { data, error } = await query.single();
+      if (error) return textResult({ error: "Form not found." });
+
       return textResult({
         formId: data.id,
         slug: data.slug,
@@ -131,6 +149,7 @@ export function createMcpServer(actor: McpActor) {
         .order("created_at", { ascending: false })
         .limit(limit);
       if (status) query = query.eq("status", status);
+      if (!isTrusted) query = query.eq("created_by", actor.id);
 
       const { data, error } = await query;
       if (error) return textResult({ error: error.message });
@@ -159,14 +178,17 @@ export function createMcpServer(actor: McpActor) {
       },
     },
     async ({ formId, limit }) => {
-      const { data, error } = await db
+      let query = db
         .from("submissions")
-        .select("id, answers, submitted_at")
+        .select("id, answers, submitted_at, forms!inner(created_by)")
         .eq("form_id", formId)
         .order("submitted_at", { ascending: false })
         .limit(limit);
+      if (!isTrusted) query = query.eq("forms.created_by", actor.id);
 
+      const { data, error } = await query;
       if (error) return textResult({ error: error.message });
+
       return textResult({
         submissions: (data ?? []).map((s) => ({
           submissionId: s.id,
@@ -184,13 +206,15 @@ export function createMcpServer(actor: McpActor) {
       inputSchema: { submissionId: z.string() },
     },
     async ({ submissionId }) => {
-      const { data, error } = await db
+      let query = db
         .from("submissions")
-        .select("id, form_id, answers, submitted_at")
-        .eq("id", submissionId)
-        .single();
+        .select("id, form_id, answers, submitted_at, forms!inner(created_by)")
+        .eq("id", submissionId);
+      if (!isTrusted) query = query.eq("forms.created_by", actor.id);
 
-      if (error) return textResult({ error: error.message });
+      const { data, error } = await query.single();
+      if (error) return textResult({ error: "Submission not found." });
+
       return textResult({
         submissionId: data.id,
         formId: data.form_id,

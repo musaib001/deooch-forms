@@ -1,7 +1,8 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
-import { createClient } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/supabase/admin";
 import type { Field } from "@/lib/forms/schema";
+import { FREE_SUBMISSION_LIMIT } from "@/lib/forms/limits";
 
 const submitSchema = z.object({
   answers: z.record(z.string(), z.union([z.string(), z.array(z.string())])),
@@ -9,6 +10,11 @@ const submitSchema = z.object({
 
 type Params = { params: Promise<{ formId: string }> };
 
+// Public submission is inherently identity-independent: anyone with the
+// link can submit, whether they're logged out or logged into a *different*
+// deoochform account. So this route reads/writes via the service-role
+// client rather than the caller's own (possibly unrelated) RLS grant.
+//
 // ponytail: no rate limiting yet; add an Upstash/Vercel-KV token bucket
 // keyed by IP+formId if abusive public submissions become a problem.
 export async function POST(request: Request, { params }: Params) {
@@ -18,10 +24,10 @@ export async function POST(request: Request, { params }: Params) {
     return NextResponse.json({ error: body.error.flatten() }, { status: 400 });
   }
 
-  const supabase = await createClient();
-  const { data: form } = await supabase
+  const admin = createAdminClient();
+  const { data: form } = await admin
     .from("forms")
-    .select("id, status, fields")
+    .select("id, status, fields, created_by")
     .eq("id", formId)
     .eq("status", "published")
     .single();
@@ -40,7 +46,7 @@ export async function POST(request: Request, { params }: Params) {
     );
   }
 
-  const { error } = await supabase.from("submissions").insert({
+  const { error } = await admin.from("submissions").insert({
     form_id: formId,
     answers: body.data.answers,
     respondent_meta: {
@@ -49,5 +55,44 @@ export async function POST(request: Request, { params }: Params) {
   });
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+
+  await closeFormsIfFreeAccountAtCap(admin, form.created_by);
+
   return NextResponse.json({ ok: true }, { status: 201 });
+}
+
+// Free accounts are capped at FREE_SUBMISSION_LIMIT submissions total,
+// across all of their forms. Once hit, auto-close every form they own so
+// respondents get a friendly "no longer accepting responses" message
+// instead of a raw error.
+async function closeFormsIfFreeAccountAtCap(
+  admin: ReturnType<typeof createAdminClient>,
+  ownerId: string
+) {
+  const { data: profile } = await admin
+    .from("profiles")
+    .select("role")
+    .eq("id", ownerId)
+    .single();
+  if (profile?.role !== "free") return;
+
+  const { data: ownerForms } = await admin
+    .from("forms")
+    .select("id")
+    .eq("created_by", ownerId);
+  const formIds = (ownerForms ?? []).map((f) => f.id);
+  if (formIds.length === 0) return;
+
+  const { count } = await admin
+    .from("submissions")
+    .select("id", { count: "exact", head: true })
+    .in("form_id", formIds);
+
+  if ((count ?? 0) >= FREE_SUBMISSION_LIMIT) {
+    await admin
+      .from("forms")
+      .update({ status: "closed" })
+      .eq("created_by", ownerId)
+      .eq("status", "published");
+  }
 }

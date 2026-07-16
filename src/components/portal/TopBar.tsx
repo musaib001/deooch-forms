@@ -1,0 +1,122 @@
+"use client";
+
+import Link from "next/link";
+import { usePathname, useRouter } from "next/navigation";
+import { useEffect, useRef, useState } from "react";
+import { createClient } from "@/lib/supabase/browser";
+
+type NavItem = { href: string; label: string };
+
+export function TopBar({
+  email,
+  role,
+}: {
+  email: string;
+  role: string;
+}) {
+  const pathname = usePathname();
+  const router = useRouter();
+  const [menuOpen, setMenuOpen] = useState(false);
+  const menuRef = useRef<HTMLDivElement>(null);
+
+  const nav: NavItem[] = [
+    { href: "/dashboard", label: "Forms" },
+    ...(role === "owner" ? [{ href: "/settings/members", label: "Members" }] : []),
+    { href: "/settings/tokens", label: "API Tokens" },
+  ];
+
+  useEffect(() => {
+    function onClick(e: MouseEvent) {
+      if (menuRef.current && !menuRef.current.contains(e.target as Node)) {
+        setMenuOpen(false);
+      }
+    }
+    function onKey(e: KeyboardEvent) {
+      if (e.key === "Escape") setMenuOpen(false);
+    }
+    document.addEventListener("mousedown", onClick);
+    document.addEventListener("keydown", onKey);
+    return () => {
+      document.removeEventListener("mousedown", onClick);
+      document.removeEventListener("keydown", onKey);
+    };
+  }, []);
+
+  async function signOut() {
+    const supabase = createClient();
+    await supabase.auth.signOut();
+    router.push("/login");
+    router.refresh();
+  }
+
+  const initial = email.charAt(0).toUpperCase();
+
+  return (
+    <header className="sticky top-0 z-40 border-b border-border bg-card/80 backdrop-blur">
+      <div className="mx-auto flex h-14 max-w-5xl items-center gap-1 px-4 sm:px-6">
+        <Link href="/dashboard" className="mr-4 flex items-center gap-2">
+          <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-brand text-sm font-bold text-brand-foreground">
+            d
+          </span>
+          <span className="hidden text-base font-bold tracking-tight text-foreground sm:inline">
+            deoochform
+          </span>
+        </Link>
+
+        <nav className="flex items-center gap-0.5">
+          {nav.map((item) => {
+            const active =
+              pathname === item.href || pathname.startsWith(item.href + "/");
+            return (
+              <Link
+                key={item.href}
+                href={item.href}
+                aria-current={active ? "page" : undefined}
+                className={
+                  "rounded-lg px-3 py-1.5 text-sm font-medium transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring " +
+                  (active
+                    ? "bg-brand-subtle text-brand"
+                    : "text-muted-foreground hover:bg-muted hover:text-foreground")
+                }
+              >
+                {item.label}
+              </Link>
+            );
+          })}
+        </nav>
+
+        <div ref={menuRef} className="relative ml-auto">
+          <button
+            onClick={() => setMenuOpen((o) => !o)}
+            aria-expanded={menuOpen}
+            aria-haspopup="menu"
+            className="flex h-8 w-8 items-center justify-center rounded-full bg-foreground text-sm font-semibold text-background transition-opacity hover:opacity-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-card"
+          >
+            {initial}
+          </button>
+
+          {menuOpen && (
+            <div
+              role="menu"
+              className="absolute right-0 mt-2 w-56 overflow-hidden rounded-xl border border-border bg-card shadow-lg"
+            >
+              <div className="border-b border-border px-4 py-3">
+                <p className="text-xs text-muted-foreground">Signed in as</p>
+                <p className="truncate text-sm font-medium text-foreground" title={email}>
+                  {email}
+                </p>
+              </div>
+              <button
+                onClick={signOut}
+                role="menuitem"
+                className="w-full px-4 py-2.5 text-left text-sm font-medium text-foreground transition-colors hover:bg-muted focus-visible:bg-muted focus-visible:outline-none"
+              >
+                Sign out
+              </button>
+            </div>
+          )}
+        </div>
+      </div>
+    </header>
+  );
+}
