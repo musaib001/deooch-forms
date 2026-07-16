@@ -49,9 +49,7 @@ export async function POST(request: Request, { params }: Params) {
   const { error } = await admin.from("submissions").insert({
     form_id: formId,
     answers: body.data.answers,
-    respondent_meta: {
-      userAgent: request.headers.get("user-agent"),
-    },
+    respondent_meta: clientMeta(request),
   });
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
@@ -59,6 +57,17 @@ export async function POST(request: Request, { params }: Params) {
   await closeFormsIfFreeAccountAtCap(admin, form.created_by);
 
   return NextResponse.json({ ok: true }, { status: 201 });
+}
+
+// Capture respondent IP (first hop of x-forwarded-for, set by Vercel/proxies).
+function clientMeta(request: Request) {
+  const fwd = request.headers.get("x-forwarded-for");
+  const ip =
+    fwd?.split(",")[0].trim() || request.headers.get("x-real-ip") || null;
+  return {
+    ip,
+    userAgent: request.headers.get("user-agent"),
+  };
 }
 
 // Free accounts are capped at FREE_SUBMISSION_LIMIT submissions total,

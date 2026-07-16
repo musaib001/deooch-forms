@@ -15,7 +15,7 @@ export default async function FormSubmissionsPage({
     supabase.from("forms").select("id, title, fields").eq("id", formId).single(),
     supabase
       .from("submissions")
-      .select("id, answers, submitted_at")
+      .select("id, answers, submitted_at, respondent_meta")
       .eq("form_id", formId)
       .order("submitted_at", { ascending: false }),
   ]);
