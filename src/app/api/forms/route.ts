@@ -13,6 +13,7 @@ export async function GET() {
   const { data, error } = await supabase
     .from("forms")
     .select("id, slug, title, status, created_at, submissions(count)")
+    .is("deleted_at", null)
     .order("created_at", { ascending: false });
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
@@ -35,7 +36,10 @@ export async function POST(request: Request) {
     const { count } = await supabase
       .from("forms")
       .select("id", { count: "exact", head: true })
-      .eq("created_by", profile.id);
+      .eq("created_by", profile.id)
+      // Trashed forms don't count against quota — otherwise deleting a form
+      // wouldn't free up a slot.
+      .is("deleted_at", null);
     if ((count ?? 0) >= quota.formLimit) {
       return NextResponse.json(
         { error: `Your plan is limited to ${quota.formLimit} forms. Upgrade to create more.` },

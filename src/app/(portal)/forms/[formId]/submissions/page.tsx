@@ -17,7 +17,8 @@ export default async function FormSubmissionsPage({
       .from("forms")
       .select("id, title, fields, updated_at")
       .eq("id", formId)
-      .single(),
+      .is("deleted_at", null)
+      .maybeSingle(),
     supabase
       .from("submissions")
       .select("id, answers, submitted_at, respondent_meta")
@@ -64,6 +65,20 @@ export default async function FormSubmissionsPage({
         </div>
       </header>
 
+      {/* Sheet tab band: names the data surface and separates the page chrome
+          from the grid, the way a spreadsheet tab does. */}
+      <div className="flex shrink-0 items-center gap-2 bg-sheet px-4">
+        <span className="flex items-center gap-2 rounded-t-lg bg-card px-3 py-2 text-[13px] font-semibold text-foreground">
+          <span className="text-sheet">
+            <GridIcon />
+          </span>
+          <span className="max-w-[280px] truncate">{form.title}</span>
+        </span>
+        <span className="ml-auto rounded-full bg-white/15 px-2.5 py-0.5 text-xs font-medium tabular-nums text-sheet-foreground">
+          {count} {count === 1 ? "entry" : "entries"}
+        </span>
+      </div>
+
       <SubmissionsView formId={formId} fields={form.fields} submissions={rows} />
     </div>
   );
@@ -71,4 +86,21 @@ export default async function FormSubmissionsPage({
 
 function Sep() {
   return <span className="mx-1.5 text-border">·</span>;
+}
+
+function GridIcon() {
+  return (
+    <svg
+      className="h-4 w-4"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth={2}
+      strokeLinecap="round"
+      aria-hidden
+    >
+      <rect x="3" y="3" width="18" height="18" rx="2" />
+      <path d="M3 9h18M3 15h18M9 3v18M15 3v18" />
+    </svg>
+  );
 }

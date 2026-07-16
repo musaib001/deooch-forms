@@ -37,6 +37,25 @@ test("neutralises formula-injection prefixes", () => {
   expect(row).toContain(`"'+1"`);
 });
 
+test("address exports without empty positional slots", () => {
+  const addrFields: Field[] = [
+    { id: "ad", type: "address", label: "Address", required: false, order: 1 },
+  ];
+  const addrRows = [
+    {
+      // street2, state and country left blank
+      answers: { ad: ["1 Main St", "", "Berlin", "", "10115", ""] },
+      submitted_at: "2026-07-15T10:00:00.000Z",
+    },
+  ];
+  const row = buildSubmissionsCsv(addrFields, addrRows).split("\r\n")[1];
+  expect(row).toContain('"1 Main St, Berlin, 10115"');
+  expect(row).not.toContain(", ,");
+
+  const parsed = JSON.parse(buildSubmissionsJson(addrFields, addrRows));
+  expect(parsed[0].Address).toBe("1 Main St, Berlin, 10115");
+});
+
 test("json export keys by label and omits headings", () => {
   const parsed = JSON.parse(buildSubmissionsJson(fields, rows));
   expect(parsed).toEqual([

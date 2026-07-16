@@ -15,7 +15,10 @@ export default async function PublicFormPage({
     .from("forms")
     .select("id, slug, title, description, fields, status")
     .eq("slug", slug)
-    .single();
+    // A trashed form must stop serving immediately; the admin client bypasses
+    // RLS, so this filter is the only thing enforcing it here.
+    .is("deleted_at", null)
+    .maybeSingle();
 
   if (!form) notFound();
 

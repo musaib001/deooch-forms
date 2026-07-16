@@ -799,21 +799,30 @@ function Canvas({
         style={{ maxWidth: DEVICE_WIDTHS[device] }}
         onClick={(e) => e.stopPropagation()}
       >
-        {/* Form header card */}
-        <div className="rounded-2xl border border-border bg-card p-6 shadow-sm">
-          <input
+        {/* Form header card. Both fields are textareas so long titles and
+            descriptions wrap instead of scrolling out of a single-line input;
+            field-sizing-content grows them to fit with no JS. rows=1 keeps the
+            collapsed height right in browsers that lack field-sizing. */}
+        <div className="rounded-2xl border border-border bg-card px-6 py-7 shadow-sm">
+          <textarea
             value={doc.title}
             onChange={(e) => commit({ ...doc, title: e.target.value }, "title")}
+            onKeyDown={(e) => {
+              // A title is a single line; Enter shouldn't inject a newline.
+              if (e.key === "Enter") e.preventDefault();
+            }}
+            rows={1}
             placeholder="Untitled form"
             aria-label="Form title"
-            className="w-full rounded-lg border border-transparent bg-transparent px-1 py-0.5 text-2xl font-bold tracking-tight text-foreground outline-none transition-colors placeholder:text-muted-foreground/50 hover:border-border focus-visible:border-brand"
+            className="block w-full resize-none rounded-lg border border-transparent bg-transparent px-2 py-1 text-center text-2xl font-bold leading-tight tracking-tight text-foreground outline-none transition-colors [field-sizing:content] placeholder:text-muted-foreground/50 hover:border-border focus-visible:border-brand"
           />
-          <input
+          <textarea
             value={doc.description}
             onChange={(e) => commit({ ...doc, description: e.target.value }, "desc")}
+            rows={1}
             placeholder="Add a description…"
             aria-label="Form description"
-            className="mt-1 w-full rounded-lg border border-transparent bg-transparent px-1 py-0.5 text-sm text-muted-foreground outline-none transition-colors placeholder:text-muted-foreground/50 hover:border-border focus-visible:border-brand"
+            className="mt-2 block w-full resize-none rounded-lg border border-transparent bg-transparent px-2 py-1 text-center text-sm leading-relaxed text-muted-foreground outline-none transition-colors [field-sizing:content] placeholder:text-muted-foreground/50 hover:border-border focus-visible:border-brand"
           />
         </div>
 

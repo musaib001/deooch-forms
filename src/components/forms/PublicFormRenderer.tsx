@@ -5,6 +5,7 @@ import { useRef, useState } from "react";
 import type { Field } from "@/lib/forms/schema";
 import { isInputField } from "@/lib/forms/schema";
 import { validateField, type FieldValue } from "@/lib/forms/validation";
+import { ADDRESS_PARTS, addressParts } from "@/lib/forms/address";
 import { formatPhone, helpTextClass, inputClass, labelClass } from "@/lib/ui";
 
 type Value = FieldValue;
@@ -201,17 +202,21 @@ function FieldRow({
   const helpId = field.helpText ? `${field.id}-help` : undefined;
   const errorId = error ? `${field.id}-error` : undefined;
   const describedBy = [helpId, errorId].filter(Boolean).join(" ") || undefined;
+  // Address renders a fieldset of sub-inputs, so nothing owns field.id and a
+  // htmlFor here would dangle. Its own <legend> names the group instead.
+  const isGroup = field.type === "address";
+  const Label = isGroup ? "p" : "label";
 
   return (
     <div className="flex flex-col gap-1.5">
-      <label htmlFor={field.id} className={labelClass}>
+      <Label htmlFor={isGroup ? undefined : field.id} className={labelClass}>
         {field.label}
         {field.required && (
           <span className="ml-0.5 text-destructive" aria-hidden>
             *
           </span>
         )}
-      </label>
+      </Label>
       {field.helpText && (
         <p id={helpId} className={helpTextClass}>
           {field.helpText}
@@ -376,6 +381,18 @@ function FieldControl({
           className={inputClass}
         />
       );
+    case "address":
+      return (
+        <AddressGroup
+          field={field}
+          value={value}
+          invalid={invalid}
+          describedBy={describedBy}
+          setValue={setValue}
+          onBlur={onBlur}
+          registerRef={registerRef}
+        />
+      );
     case "file":
       return (
         <input
@@ -402,6 +419,66 @@ function FieldControl({
         />
       );
   }
+}
+
+function AddressGroup({
+  field,
+  value,
+  invalid,
+  describedBy,
+  setValue,
+  onBlur,
+  registerRef,
+}: {
+  field: Field;
+  value: Value | undefined;
+  invalid: boolean;
+  describedBy?: string;
+  setValue: (value: Value) => void;
+  onBlur: () => void;
+  registerRef: (el: HTMLElement | null) => void;
+}) {
+  const parts = addressParts(value);
+
+  function setPart(index: number, next: string) {
+    const updated = [...parts];
+    updated[index] = next;
+    setValue(updated);
+  }
+
+  return (
+    <fieldset className="grid grid-cols-1 gap-3 sm:grid-cols-2" aria-describedby={describedBy}>
+      <legend className="sr-only">{field.label}</legend>
+      {ADDRESS_PARTS.map((part, i) => {
+        // Street lines span the full width; city/state/postal/country pair up.
+        const fullWidth = part.key === "street1" || part.key === "street2";
+        const partId = `${field.id}-${part.key}`;
+        return (
+          <div key={part.key} className={fullWidth ? "sm:col-span-2" : undefined}>
+            <label
+              htmlFor={partId}
+              className="mb-1 block text-[13px] font-medium text-muted-foreground"
+            >
+              {part.label}
+            </label>
+            <input
+              id={partId}
+              // Only the first input is registered for focus-on-error, and only
+              // it carries the aria-invalid for the group's error message.
+              ref={i === 0 ? registerRef : undefined}
+              aria-invalid={i === 0 ? invalid || undefined : undefined}
+              type="text"
+              autoComplete={part.autoComplete}
+              value={parts[i]}
+              onChange={(e) => setPart(i, e.target.value)}
+              onBlur={onBlur}
+              className={inputClass}
+            />
+          </div>
+        );
+      })}
+    </fieldset>
+  );
 }
 
 function CheckboxGroup({

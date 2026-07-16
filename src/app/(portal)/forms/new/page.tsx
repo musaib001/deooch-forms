@@ -15,7 +15,8 @@ export default async function NewFormPage() {
     const { count } = await supabase
       .from("forms")
       .select("id", { count: "exact", head: true })
-      .eq("created_by", profile.id);
+      .eq("created_by", profile.id)
+      .is("deleted_at", null);
 
     if ((count ?? 0) >= quota.formLimit) {
       return (

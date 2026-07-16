@@ -13,6 +13,7 @@ import {
   Heading,
   HeartHandshake,
   Mail,
+  MapPin,
   Paperclip,
   Phone,
   Repeat,
@@ -46,6 +47,7 @@ export const LIBRARY: LibraryCategory[] = [
     items: [
       { type: "email", name: "Email", description: "Validated email", icon: Mail },
       { type: "phone", name: "Phone", description: "Phone number", icon: Phone },
+      { type: "address", name: "Address", description: "Street, city, postal code", icon: MapPin },
     ],
   },
   {

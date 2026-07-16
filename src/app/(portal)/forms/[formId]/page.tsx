@@ -14,7 +14,8 @@ export default async function EditFormPage({
     .from("forms")
     .select("*")
     .eq("id", formId)
-    .single();
+    .is("deleted_at", null)
+    .maybeSingle();
 
   if (!form) notFound();
 

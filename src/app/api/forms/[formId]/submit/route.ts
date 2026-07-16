@@ -30,7 +30,10 @@ export async function POST(request: Request, { params }: Params) {
     .select("id, status, fields, created_by")
     .eq("id", formId)
     .eq("status", "published")
-    .single();
+    // Admin client bypasses RLS, so trashed forms must be excluded explicitly
+    // or a deleted form would keep accepting public submissions.
+    .is("deleted_at", null)
+    .maybeSingle();
 
   if (!form) {
     return NextResponse.json({ error: "Form not found" }, { status: 404 });
@@ -91,7 +94,8 @@ async function closeFormsIfFreeAccountAtCap(
   const { data: ownerForms } = await admin
     .from("forms")
     .select("id")
-    .eq("created_by", ownerId);
+    .eq("created_by", ownerId)
+    .is("deleted_at", null);
   const formIds = (ownerForms ?? []).map((f) => f.id);
   if (formIds.length === 0) return;
 
@@ -105,6 +109,7 @@ async function closeFormsIfFreeAccountAtCap(
       .from("forms")
       .update({ status: "closed" })
       .eq("created_by", ownerId)
-      .eq("status", "published");
+      .eq("status", "published")
+      .is("deleted_at", null);
   }
 }

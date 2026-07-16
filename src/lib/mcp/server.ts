@@ -39,7 +39,8 @@ export function createMcpServer(actor: McpActor) {
         const { count } = await db
           .from("forms")
           .select("id", { count: "exact", head: true })
-          .eq("created_by", actor.id);
+          .eq("created_by", actor.id)
+          .is("deleted_at", null);
         if ((count ?? 0) >= quota.formLimit) {
           return textResult({
             error: `Your plan is limited to ${quota.formLimit} forms. Upgrade to create more.`,
@@ -86,7 +87,8 @@ export function createMcpServer(actor: McpActor) {
       let query = db
         .from("forms")
         .update({ ...changes, updated_by: actor.id })
-        .eq("id", formId);
+        .eq("id", formId)
+        .is("deleted_at", null);
       if (!isTrusted) query = query.eq("created_by", actor.id);
 
       const { data, error } = await query.select("id, slug, updated_at").single();
@@ -114,7 +116,7 @@ export function createMcpServer(actor: McpActor) {
       inputSchema: { formId: z.string() },
     },
     async ({ formId }) => {
-      let query = db.from("forms").select("*").eq("id", formId);
+      let query = db.from("forms").select("*").eq("id", formId).is("deleted_at", null);
       if (!isTrusted) query = query.eq("created_by", actor.id);
 
       const { data, error } = await query.single();
@@ -147,6 +149,7 @@ export function createMcpServer(actor: McpActor) {
       let query = db
         .from("forms")
         .select("id, slug, title, status, created_at, submissions(count)")
+        .is("deleted_at", null)
         .order("created_at", { ascending: false })
         .limit(limit);
       if (status) query = query.eq("status", status);

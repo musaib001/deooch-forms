@@ -2,64 +2,116 @@ import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { getSessionProfile } from "@/lib/auth/session";
 import { buttonPrimaryClass } from "@/lib/ui";
-import { formatDate } from "@/lib/date";
 import { quotaFor } from "@/lib/plans";
 import { Container } from "@/components/portal/Container";
+import {
+  WorkspaceSidebar,
+  isViewId,
+  type ViewId,
+} from "@/components/portal/WorkspaceSidebar";
+import { FormRow, type FormListItem } from "@/components/portal/FormRow";
 
-const STATUS_STYLES: Record<string, string> = {
-  published: "bg-brand-subtle text-brand",
-  draft: "bg-muted text-muted-foreground",
-  closed: "bg-destructive-subtle text-destructive",
-};
-
-type FormRow = {
+type FormRecord = {
   id: string;
   title: string;
   status: string;
-  created_at: string;
+  updated_at: string;
+  deleted_at: string | null;
+  archived_at: string | null;
   submissions: { count: number }[];
 };
 
-function responseCount(form: FormRow) {
-  return form.submissions[0]?.count ?? 0;
-}
+const EMPTY_COPY: Record<ViewId, { title: string; body: string }> = {
+  all: {
+    title: "No forms yet",
+    body: "Create your first form to start collecting responses.",
+  },
+  drafts: {
+    title: "No drafts",
+    body: "Forms you haven't published yet will appear here.",
+  },
+  favorites: {
+    title: "No favorites yet",
+    body: "Star a form to pin it here for quick access.",
+  },
+  archive: {
+    title: "Nothing archived",
+    body: "Archived forms are hidden from your main list but keep their responses.",
+  },
+  trash: {
+    title: "Trash is empty",
+    body: "Deleted forms land here so you can restore them.",
+  },
+};
 
-export default async function DashboardPage() {
-  const [profile, { data }] = await Promise.all([
+export default async function DashboardPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ view?: string }>;
+}) {
+  const { view: viewParam } = await searchParams;
+  const view: ViewId = isViewId(viewParam) ? viewParam : "all";
+
+  const supabase = await createClient();
+  const [profile, { data }, { data: favRows }] = await Promise.all([
     getSessionProfile(),
-    (await createClient())
+    supabase
       .from("forms")
-      .select("id, title, status, created_at, submissions(count)")
-      .order("created_at", { ascending: false }),
+      .select("id, title, status, updated_at, deleted_at, archived_at, submissions(count)")
+      .order("updated_at", { ascending: false }),
+    supabase.from("form_favorites").select("form_id"),
   ]);
 
-  const forms = (data ?? []) as FormRow[];
-  const totalResponses = forms.reduce((sum, f) => sum + responseCount(f), 0);
-  const publishedCount = forms.filter((f) => f.status === "published").length;
+  const favorites = new Set((favRows ?? []).map((f) => f.form_id as string));
+  const all = ((data ?? []) as FormRecord[]).map(
+    (f): FormListItem => ({
+      id: f.id,
+      title: f.title,
+      status: f.status,
+      updated_at: f.updated_at,
+      responses: f.submissions[0]?.count ?? 0,
+      favorite: favorites.has(f.id),
+      archived: f.archived_at !== null,
+      deleted: f.deleted_at !== null,
+    })
+  );
+
+  // Trash and Archive are exclusive of the active list, so every other view is
+  // filtered down from the not-deleted, not-archived set.
+  const active = all.filter((f) => !f.deleted && !f.archived);
+  const buckets: Record<ViewId, FormListItem[]> = {
+    all: active,
+    drafts: active.filter((f) => f.status === "draft"),
+    favorites: active.filter((f) => f.favorite),
+    archive: all.filter((f) => f.archived && !f.deleted),
+    trash: all.filter((f) => f.deleted),
+  };
+  const counts = Object.fromEntries(
+    Object.entries(buckets).map(([k, v]) => [k, v.length])
+  ) as Record<ViewId, number>;
+
+  const forms = buckets[view];
   const quota = profile ? quotaFor(profile) : { formLimit: null, submissionLimit: null };
-  const atFormLimit = quota.formLimit !== null && forms.length >= quota.formLimit;
+  // Quota counts every form the user still owns, including archived — only
+  // trashing one frees a slot, matching the API's `deleted_at is null` check.
+  const ownedCount = all.filter((f) => !f.deleted).length;
+  const atFormLimit = quota.formLimit !== null && ownedCount >= quota.formLimit;
+  const totalResponses = active.reduce((sum, f) => sum + f.responses, 0);
   const atSubmissionLimit =
     quota.submissionLimit !== null && totalResponses >= quota.submissionLimit;
 
   return (
     <Container>
-      <div className="mb-8 flex flex-wrap items-center justify-between gap-4">
-        <div>
-          <div className="flex items-center gap-2.5">
-            <h1 className="text-2xl font-bold tracking-tight text-foreground">
-              Forms
-            </h1>
-            <Link
-              href="/pricing"
-              title="View plans"
-              className="rounded-full bg-brand-subtle px-2.5 py-0.5 text-xs font-semibold capitalize text-brand transition-colors hover:bg-brand hover:text-brand-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-            >
-              {profile?.plan ?? "free"} plan
-            </Link>
-          </div>
-          <p className="mt-1 text-sm text-muted-foreground">
-            Build forms in the portal or by asking Claude.
-          </p>
+      <div className="mb-6 flex flex-wrap items-center justify-between gap-4">
+        <div className="flex items-center gap-2.5">
+          <h1 className="text-2xl font-bold tracking-tight text-foreground">Forms</h1>
+          <Link
+            href="/pricing"
+            title="View plans"
+            className="rounded-full bg-brand-subtle px-2.5 py-0.5 text-xs font-semibold capitalize text-brand transition-colors hover:bg-brand hover:text-brand-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+          >
+            {profile?.plan ?? "free"} plan
+          </Link>
         </div>
         {atFormLimit ? (
           <span
@@ -76,133 +128,54 @@ export default async function DashboardPage() {
         )}
       </div>
 
-      {forms.length > 0 && (
-        <div className="mb-6 grid grid-cols-1 gap-4 sm:grid-cols-3">
-          <Stat
-            label="Forms"
-            value={forms.length}
-            limit={quota.formLimit ?? undefined}
-            icon={<DocIcon />}
-          />
-          <Stat
-            label="Responses"
-            value={totalResponses}
-            limit={quota.submissionLimit ?? undefined}
-            icon={<InboxIcon />}
-          />
-          <Stat label="Published" value={publishedCount} icon={<GlobeIcon />} />
-        </div>
-      )}
-
       {(atFormLimit || atSubmissionLimit) && (
-        <p className="mb-6 flex items-center gap-2 rounded-lg border border-brand/30 bg-brand-subtle px-4 py-3 text-sm text-brand">
+        <p className="mb-5 flex items-center gap-2 rounded-lg border border-brand/30 bg-brand-subtle px-4 py-3 text-sm text-brand">
           <InfoIcon />
           <span>
             {atSubmissionLimit
               ? `You've reached the ${quota.submissionLimit}-submission limit — your forms have been closed to new responses.`
               : `You've used all ${quota.formLimit} forms on your current plan.`}{" "}
-            <Link href="/pricing" className="font-semibold underline underline-offset-2 hover:text-brand-hover">
+            <Link
+              href="/pricing"
+              className="font-semibold underline underline-offset-2 hover:text-brand-hover"
+            >
               Upgrade your plan
             </Link>
           </span>
         </p>
       )}
 
-      {forms.length === 0 ? (
-        <div className="rounded-2xl border border-dashed border-border bg-card px-6 py-16 text-center">
-          <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-xl bg-brand-subtle text-brand">
-            <DocIcon />
-          </div>
-          <p className="text-base font-semibold text-foreground">No forms yet</p>
-          <p className="mx-auto mt-1 max-w-sm text-sm text-muted-foreground">
-            Create your first form to start collecting responses.
-          </p>
-          <Link href="/forms/new" className={buttonPrimaryClass + " mt-5"}>
-            <PlusIcon />
-            New form
-          </Link>
-        </div>
-      ) : (
-        <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-          {forms.map((form) => {
-            const count = responseCount(form);
-            return (
-              <div
-                key={form.id}
-                className="group flex flex-col rounded-2xl border border-border bg-card p-5 transition-colors duration-150 hover:border-brand/40"
-              >
-                <div className="mb-3 flex items-start justify-between gap-3">
-                  <Link
-                    href={`/forms/${form.id}`}
-                    className="line-clamp-2 text-base font-semibold text-foreground transition-colors group-hover:text-brand"
-                  >
-                    {form.title}
-                  </Link>
-                  <span
-                    className={
-                      "shrink-0 rounded-full px-2.5 py-0.5 text-xs font-medium capitalize " +
-                      (STATUS_STYLES[form.status] ?? STATUS_STYLES.draft)
-                    }
-                  >
-                    {form.status}
-                  </span>
-                </div>
-                <div className="mt-auto flex items-center justify-between border-t border-border pt-3 text-sm">
-                  <span className="text-muted-foreground">
-                    <span className="font-semibold tabular-nums text-foreground">
-                      {count}
-                    </span>{" "}
-                    {count === 1 ? "response" : "responses"}
-                    <span className="mx-2 text-border">·</span>
-                    {formatDate(form.created_at)}
-                  </span>
-                  <Link
-                    href={`/forms/${form.id}/submissions`}
-                    className="whitespace-nowrap font-medium text-brand transition-colors hover:text-brand-hover"
-                  >
-                    Responses →
-                  </Link>
-                </div>
-              </div>
-            );
-          })}
-        </div>
-      )}
-    </Container>
-  );
-}
+      <div className="flex flex-col gap-6 md:flex-row md:gap-8">
+        <aside className="shrink-0 md:w-48">
+          <WorkspaceSidebar active={view} counts={counts} />
+        </aside>
 
-function Stat({
-  label,
-  value,
-  limit,
-  icon,
-}: {
-  label: string;
-  value: number;
-  limit?: number;
-  icon: React.ReactNode;
-}) {
-  return (
-    <div className="flex items-center gap-4 rounded-2xl border border-border bg-card px-5 py-4">
-      <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-brand-subtle text-brand">
-        {icon}
-      </span>
-      <div>
-        <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-          {label}
-        </p>
-        <p className="mt-0.5 text-2xl font-bold tabular-nums leading-none text-foreground">
-          {value}
-          {limit !== undefined && (
-            <span className="text-base font-medium text-muted-foreground">
-              {" "}
-              / {limit}
-            </span>
+        <div className="min-w-0 flex-1">
+          {forms.length === 0 ? (
+            <div className="rounded-2xl border border-dashed border-border bg-card px-6 py-16 text-center">
+              <p className="text-base font-semibold text-foreground">
+                {EMPTY_COPY[view].title}
+              </p>
+              <p className="mx-auto mt-1 max-w-sm text-sm text-muted-foreground">
+                {EMPTY_COPY[view].body}
+              </p>
+              {view === "all" && (
+                <Link href="/forms/new" className={buttonPrimaryClass + " mt-5"}>
+                  <PlusIcon />
+                  New form
+                </Link>
+              )}
+            </div>
+          ) : (
+            <div className="overflow-hidden rounded-2xl border border-border bg-card">
+              {forms.map((form) => (
+                <FormRow key={form.id} form={form} view={view} />
+              ))}
+            </div>
           )}
-        </p>
+        </div>
       </div>
-    </div>
+    </Container>
   );
 }
 
@@ -213,30 +186,7 @@ function PlusIcon() {
     </svg>
   );
 }
-function DocIcon() {
-  return (
-    <svg className="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" aria-hidden>
-      <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
-      <path d="M14 2v6h6M9 13h6M9 17h6" />
-    </svg>
-  );
-}
-function InboxIcon() {
-  return (
-    <svg className="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" aria-hidden>
-      <path d="M22 12h-6l-2 3h-4l-2-3H2" />
-      <path d="M5.45 5.11 2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.45-6.89A2 2 0 0 0 16.76 4H7.24a2 2 0 0 0-1.79 1.11z" />
-    </svg>
-  );
-}
-function GlobeIcon() {
-  return (
-    <svg className="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" aria-hidden>
-      <circle cx="12" cy="12" r="10" />
-      <path d="M2 12h20M12 2a15 15 0 0 1 0 20 15 15 0 0 1 0-20" />
-    </svg>
-  );
-}
+
 function InfoIcon() {
   return (
     <svg className="h-4 w-4 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" aria-hidden>

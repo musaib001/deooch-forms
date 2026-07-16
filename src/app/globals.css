@@ -16,6 +16,12 @@
   --destructive: #dc2626;
   --destructive-subtle: #fef2f2;
   --success: #16a34a;
+  /* Data-surface accent. Deliberately not --brand: it marks "this is the
+     grid/table surface" while orange stays reserved for primary actions, so
+     the two never compete in the same viewport. */
+  --sheet: #15803d;
+  --sheet-hover: #166534;
+  --sheet-foreground: #ffffff;
   --radius: 0.75rem;
   color-scheme: light;
 }
@@ -36,6 +42,9 @@
   --color-destructive: var(--destructive);
   --color-destructive-subtle: var(--destructive-subtle);
   --color-success: var(--success);
+  --color-sheet: var(--sheet);
+  --color-sheet-hover: var(--sheet-hover);
+  --color-sheet-foreground: var(--sheet-foreground);
   --font-sans: var(--font-jakarta);
   --font-mono: var(--font-geist-mono);
   --radius-lg: var(--radius);

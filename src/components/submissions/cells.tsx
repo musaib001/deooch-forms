@@ -1,5 +1,6 @@
 import type { Field, FieldType } from "@/lib/forms/schema";
 import { CHOICE_FIELD_TYPES } from "@/lib/forms/schema";
+import { addressParts, formatAddress, isAddressEmpty } from "@/lib/forms/address";
 import { formatDate } from "@/lib/date";
 
 export type RespondentMeta = {
@@ -77,6 +78,20 @@ export function Cell({
   value: string | string[] | undefined;
   multiline?: boolean;
 }) {
+  // Address is positional, so it must be read before asArray() flattens it and
+  // loses which slot each part came from.
+  if (field.type === "address") {
+    if (isAddressEmpty(value)) return <Empty />;
+    const parts = addressParts(value).filter((p) => p.trim());
+    return multiline ? (
+      <span className="block whitespace-pre-wrap text-foreground">{parts.join("\n")}</span>
+    ) : (
+      <span className="block truncate text-foreground" title={formatAddress(value)}>
+        {formatAddress(value)}
+      </span>
+    );
+  }
+
   const values = asArray(value).filter((v) => v !== "");
   if (values.length === 0) return <Empty />;
 
@@ -150,6 +165,7 @@ export function FieldTypeIcon({ type }: { type: FieldType }) {
     textarea: "¶",
     email: "@",
     phone: "☎",
+    address: "⌂",
     number: "#",
     select: "▾",
     radio: "◉",

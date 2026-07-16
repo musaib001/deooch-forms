@@ -1,5 +1,6 @@
 import type { Field } from "@/lib/forms/schema";
 import { isInputField } from "@/lib/forms/schema";
+import { formatAddress } from "@/lib/forms/address";
 
 type Submission = {
   answers: Record<string, string | string[]>;
@@ -17,7 +18,10 @@ function cell(value: string) {
   return `"${safe.replace(/"/g, '""')}"`;
 }
 
-function answer(value: string | string[] | undefined) {
+// Address slots are positional and often partly blank, so a plain join emits
+// empty segments ("1 Main St, , Berlin, , 10115, "). formatAddress drops them.
+function answer(field: Field, value: string | string[] | undefined) {
+  if (field.type === "address") return formatAddress(value);
   if (Array.isArray(value)) return value.join(", ");
   return value ?? "";
 }
@@ -27,7 +31,7 @@ export function buildSubmissionsCsv(fields: Field[], submissions: Submission[]) 
   const header = [...cols.map((f) => f.label), "Submitted At"].map(cell).join(",");
   const rows = submissions.map((s) =>
     [
-      ...cols.map((f) => answer(s.answers[f.id])),
+      ...cols.map((f) => answer(f, s.answers[f.id])),
       new Date(s.submitted_at).toISOString(),
     ]
       .map(cell)
@@ -41,7 +45,7 @@ export function buildSubmissionsJson(fields: Field[], submissions: Submission[])
   return JSON.stringify(
     submissions.map((s) => ({
       submittedAt: s.submitted_at,
-      ...Object.fromEntries(cols.map((f) => [f.label, answer(s.answers[f.id])])),
+      ...Object.fromEntries(cols.map((f) => [f.label, answer(f, s.answers[f.id])])),
     })),
     null,
     2

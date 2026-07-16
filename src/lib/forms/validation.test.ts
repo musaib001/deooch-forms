@@ -61,3 +61,39 @@ describe("validateField", () => {
     expect(validateField(email, "bad")).toMatch(/valid email/);
   });
 });
+
+describe("validateField — address", () => {
+  const blank = ["", "", "", "", "", ""];
+  // [street1, street2, city, state, postal, country]
+  const full = ["1 Main St", "", "Berlin", "BE", "10115", "Germany"];
+
+  it("rejects an all-blank required address despite it being a non-empty array", () => {
+    // Regression guard: isEmpty([...6 blanks]) is false (length > 0), so a
+    // generic required check would wrongly pass this.
+    expect(isEmpty(blank)).toBe(false);
+    expect(validateField(field({ type: "address", required: true }), blank)).toBe(
+      "This field is required."
+    );
+    expect(
+      validateField(field({ type: "address", required: true }), undefined)
+    ).toBe("This field is required.");
+  });
+
+  it("passes an all-blank optional address", () => {
+    expect(validateField(field({ type: "address" }), blank)).toBeNull();
+    expect(validateField(field({ type: "address" }), undefined)).toBeNull();
+  });
+
+  it("requires street, city and postal once a required address is started", () => {
+    const partial = ["1 Main St", "", "", "", "", ""];
+    expect(
+      validateField(field({ type: "address", required: true }), partial)
+    ).toMatch(/street address, city, and postal/);
+    expect(validateField(field({ type: "address", required: true }), full)).toBeNull();
+  });
+
+  it("does not demand sub-fields for an optional partially-filled address", () => {
+    const partial = ["1 Main St", "", "", "", "", ""];
+    expect(validateField(field({ type: "address" }), partial)).toBeNull();
+  });
+});

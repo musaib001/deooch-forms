@@ -23,7 +23,12 @@ export async function GET(request: Request, { params }: Params) {
   const supabase = await createClient();
 
   const [{ data: form }, { data: submissions }] = await Promise.all([
-    supabase.from("forms").select("title, slug, fields").eq("id", formId).single(),
+    supabase
+      .from("forms")
+      .select("title, slug, fields")
+      .eq("id", formId)
+      .is("deleted_at", null)
+      .maybeSingle(),
     supabase
       .from("submissions")
       .select("answers, submitted_at")
