@@ -8,7 +8,7 @@ export default async function PortalLayout({
   children: React.ReactNode;
 }) {
   const profile = await getSessionProfile();
-  if (!profile) redirect("/login");
+  if (!profile) redirect(`/login?_debug=${process.env.DEV_BYPASS_AUTH ?? "undef"}`);
 
   return (
     // h-screen + min-h-0 (not min-h-screen) so a full-bleed child can claim the

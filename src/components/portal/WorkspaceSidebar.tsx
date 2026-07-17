@@ -5,8 +5,6 @@ import { useState } from "react";
 import { ChevronDown, ChevronRight, Users } from "lucide-react";
 import { VIEWS, type ViewId } from "./views";
 
-export { isViewId, type ViewId } from "./views";
-
 export function WorkspaceSidebar({
   active,
   counts,

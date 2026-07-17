@@ -4,11 +4,8 @@ import { getSessionProfile } from "@/lib/auth/session";
 import { buttonPrimaryClass } from "@/lib/ui";
 import { quotaFor } from "@/lib/plans";
 import { Container } from "@/components/portal/Container";
-import {
-  WorkspaceSidebar,
-  isViewId,
-  type ViewId,
-} from "@/components/portal/WorkspaceSidebar";
+import { WorkspaceSidebar } from "@/components/portal/WorkspaceSidebar";
+import { isViewId, type ViewId } from "@/components/portal/views";
 import { FormRow, type FormListItem } from "@/components/portal/FormRow";
 
 type FormRecord = {
