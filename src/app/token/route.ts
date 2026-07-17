@@ -44,7 +44,7 @@ export async function POST(request: Request) {
   const { raw, hash } = generateToken();
   const { error } = await admin
     .from("api_tokens")
-    .insert({ user_id: authCode.user_id, name: "Claude Connector", token_hash: hash });
+    .insert({ user_id: authCode.user_id, name: "MCP Connector", token_hash: hash });
   if (error) {
     return NextResponse.json({ error: "server_error", error_description: error.message }, { status: 500 });
   }

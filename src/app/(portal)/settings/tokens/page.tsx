@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { MCP_URL } from "@/lib/site";
 import { TokensTable } from "@/components/settings/TokensTable";
 import { Container } from "@/components/portal/Container";
 
@@ -9,9 +10,9 @@ export default function TokensPage() {
         Connected apps
       </h1>
       <p className="mb-6 mt-0.5 text-sm text-muted-foreground">
-        Connect Claude or GPT to this workspace via MCP at{" "}
+        Connect an AI assistant to this workspace via MCP at{" "}
         <code className="rounded bg-muted px-1.5 py-0.5 font-mono text-xs text-foreground">
-          {`${process.env.NEXT_PUBLIC_APP_URL ?? ""}/api/mcp`}
+          {MCP_URL}
         </code>
         . You&apos;ll be asked to sign in here, then sent back to the app. Revoking
         a connection forces it to sign in again. New to this?{" "}

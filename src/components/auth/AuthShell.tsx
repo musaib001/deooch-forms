@@ -4,7 +4,7 @@ const FEATURES = [
   {
     title: "Build with AI or by hand",
     description:
-      "Describe a form to Claude or GPT and it's created instantly — or build it yourself.",
+      "Describe a form to your AI assistant and it's created instantly — or build it yourself.",
     icon: SparkleIcon,
   },
   {

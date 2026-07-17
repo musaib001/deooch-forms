@@ -48,7 +48,7 @@ export function PricingCards() {
           )}
 
           <Link
-            href={plan.id === "enterprise" ? "mailto:sales@deoochform.com" : "/signup"}
+            href={plan.id === "enterprise" ? "mailto:sales@deooch.com" : "/signup"}
             className={`mt-5 flex h-10 items-center justify-center rounded-lg px-4 text-sm font-semibold transition-colors ${
               plan.highlight
                 ? "bg-brand text-brand-foreground hover:bg-brand-hover"

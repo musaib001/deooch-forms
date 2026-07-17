@@ -1,11 +1,16 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { getSessionProfile } from "@/lib/auth/session";
+import { SITE_URL, MCP_URL } from "@/lib/site";
 import { Container } from "@/components/portal/Container";
+import { TopBar } from "@/components/portal/TopBar";
+import { MarketingNav, MarketingFooter } from "@/components/marketing/MarketingNav";
 
-export const metadata: Metadata = { title: "Connect an AI — deoochform" };
-
-const APP_URL = process.env.NEXT_PUBLIC_APP_URL ?? "https://app.deooch.com";
-const MCP_URL = `${APP_URL}/api/mcp`;
+export const metadata: Metadata = {
+  title: "MCP connectors — deoochform",
+  description:
+    "Connect any MCP-compatible AI assistant and build forms by describing them.",
+};
 
 const TOOLS = [
   ["create_form", "Create a form and get its public link back."],
@@ -19,15 +24,14 @@ const TOOLS = [
 const ERRORS = [
   {
     code: "401 Unauthorized",
-    cause:
-      "No token, a revoked token, or a typo in the Authorization header. Claude Code shows the connection as failed when you run /mcp.",
-    fix: "Run /mcp and re-authenticate. If you used a token, check it wasn't revoked on the Connected apps page, then re-add the server with a fresh one.",
+    cause: "The connection was revoked, or the sign-in never completed.",
+    fix: "Remove the connector and add it again so you're sent through sign-in from scratch.",
   },
   {
     code: "Form not found.",
     cause:
-      "The form id is wrong, the form was deleted — or you're on the Free plan and the form belongs to a teammate. Free tokens only reach forms you created.",
-    fix: "Ask Claude to list your forms first and use an id from that list. If the form is a teammate's, ask a workspace owner to run it, or upgrade.",
+      "The form id is wrong, the form was deleted — or you're on the Free plan and the form belongs to a teammate. Free accounts only reach forms you created.",
+    fix: "Ask your assistant to list your forms first and use an id from that list. If the form is a teammate's, ask a workspace owner, or upgrade.",
   },
   {
     code: "Your plan is limited to N forms. Upgrade to create more.",
@@ -38,35 +42,27 @@ const ERRORS = [
     code: "Connection closed / server not responding",
     cause:
       "Usually a wrong URL — a missing /api/mcp on the end, or http instead of https.",
-    fix: `Remove and re-add it: claude mcp remove deoochform, then re-run the add command with exactly ${MCP_URL}.`,
+    fix: `Remove the connector and re-add it with exactly ${MCP_URL}.`,
   },
   {
-    code: "Browser doesn't open during /mcp login",
-    cause: "Claude Code can't launch a browser (common over SSH or in a container).",
-    fix: "Copy the URL Claude Code prints into any browser, sign in there, and the CLI picks the session up. Or use the API token method instead — it needs no browser.",
+    code: "Browser doesn't open during sign-in",
+    cause: "Your MCP client can't launch a browser (common over SSH or in a container).",
+    fix: "Copy the sign-in URL it prints into any browser and sign in there — the connection picks up automatically once you approve.",
   },
 ];
 
 const FAQS = [
   {
-    q: "Do I need an API token if I use Claude Code?",
-    a: "No. The OAuth method (Option 1) signs you in through the browser and Claude Code stores the connection for you. Tokens are for headless setups — CI, servers, scripts — or clients that can't do OAuth.",
+    q: "What can it actually see?",
+    a: "Only what the six tools expose: your forms and their responses. It can create and edit forms and read submissions. It can't touch billing, members, or other workspaces.",
   },
   {
-    q: "Where do I get an API token?",
-    a: "On the Connected apps page. Tokens start with dff_ and are shown only once at creation, so copy it right away. Lost it? Revoke it and create a new one.",
-  },
-  {
-    q: "What can Claude actually see?",
-    a: "Only what the six tools expose: your forms and their responses. Claude can create and edit forms and read submissions. It can't touch billing, members, or other workspaces.",
-  },
-  {
-    q: "Does this work with ChatGPT, Gemini, or other AI assistants?",
-    a: `Yes — any MCP client that supports remote HTTP servers, including Claude Desktop, claude.ai, ChatGPT, Gemini, and DeepSeek. Add ${MCP_URL} as a custom connector and sign in when prompted.`,
+    q: "Which AI assistants does this work with?",
+    a: `Any client that supports the Model Context Protocol (MCP) over remote HTTP. Add ${MCP_URL} as a custom connector and sign in when prompted.`,
   },
   {
     q: "How do I disconnect?",
-    a: "Revoke the connection on the Connected apps page — it stops working immediately. In Claude Code, also run claude mcp remove deoochform to drop it from your config.",
+    a: "Revoke the connection on the Connected apps page — it stops working immediately. Remove it from your assistant's settings too, so it stops trying to reconnect.",
   },
   {
     q: "Is the connection per-user or per-workspace?",
@@ -74,18 +70,34 @@ const FAQS = [
   },
 ];
 
-export default function ConnectPage() {
+// Public on purpose: people evaluate the MCP integration before signing up.
+// Signed-in visitors keep the portal chrome; everyone else gets marketing nav.
+export default async function ConnectPage() {
+  const profile = await getSessionProfile();
+
   return (
-    <Container>
-      <div className="mx-auto max-w-3xl">
+    <div className="flex min-h-screen flex-col bg-background">
+      {profile ? (
+        <TopBar
+          email={profile.email}
+          fullName={profile.full_name}
+          role={profile.role}
+          plan={profile.plan}
+        />
+      ) : (
+        <MarketingNav />
+      )}
+
+      <main className="flex-1">
+        <Container>
+          <div className="mx-auto max-w-3xl">
         <div className="mb-8">
           <h1 className="text-2xl font-bold tracking-tight text-foreground">
-            Connect an AI
+            MCP connectors
           </h1>
           <p className="mt-1 text-sm text-muted-foreground">
-            Build forms and read responses by asking Claude, ChatGPT, Gemini,
-            DeepSeek, or any MCP-compatible assistant, straight from your
-            terminal. Takes about a minute.
+            Build forms and read responses by asking any AI assistant that
+            supports MCP. Takes about a minute.
           </p>
         </div>
 
@@ -95,51 +107,51 @@ export default function ConnectPage() {
 
         <section className="mb-10">
           <h2 className="mb-1 text-base font-bold text-foreground">
-            Option 1 — Claude Code (recommended)
+            Add the connector
           </h2>
           <p className="mb-4 text-sm text-muted-foreground">
             Signs you in through the browser. No token to copy or store.
           </p>
 
-          <Step n={1} title="Add the server">
+          <Step n={1} title="Copy the connector URL">
             <p className="mb-3 text-sm text-muted-foreground">
-              Run this in your terminal, from any directory:
+              This is the address your AI assistant connects to:
             </p>
-            <Terminal
-              lines={[
-                { prompt: true, text: `claude mcp add --transport http deoochform ${MCP_URL}` },
-                { text: "Added HTTP MCP server deoochform" },
-              ]}
-            />
+            <Terminal lines={[{ text: MCP_URL }]} />
           </Step>
 
-          <Step n={2} title="Sign in">
+          <Step n={2} title="Add it as a custom connector">
             <p className="mb-3 text-sm text-muted-foreground">
-              Start Claude Code, run <Code>/mcp</Code>, pick{" "}
-              <strong className="font-semibold text-foreground">deoochform</strong>,
-              and choose Authenticate. Your browser opens on deoochform — sign in
-              and approve. The tab closes itself.
+              In your AI assistant&apos;s settings, add a new remote MCP connector
+              (sometimes called a custom connector or MCP server) and paste in
+              the URL above.
             </p>
-            <Terminal
-              lines={[
-                { prompt: true, text: "claude" },
-                { prompt: true, text: "/mcp" },
-                { text: "  deoochform   ⚠ needs authentication  →  Authenticate" },
-                { text: "  Opening browser…" },
-                { text: "  deoochform   ✔ connected · 6 tools", tone: "ok" },
-              ]}
-            />
           </Step>
 
-          <Step n={3} title="Try it" last>
+          <Step n={3} title="Sign in">
             <p className="mb-3 text-sm text-muted-foreground">
-              Ask Claude for something in plain English:
+              Your assistant opens a browser to deoochform — sign in and
+              approve. You&apos;re sent back automatically and the connection
+              shows up on{" "}
+              <Link
+                href="/settings/tokens"
+                className="font-semibold text-brand hover:text-brand-hover"
+              >
+                Connected apps
+              </Link>
+              .
+            </p>
+          </Step>
+
+          <Step n={4} title="Try it" last>
+            <p className="mb-3 text-sm text-muted-foreground">
+              Ask it for something in plain English:
             </p>
             <Terminal
               lines={[
                 { prompt: true, text: "Create a customer feedback form with a rating and a comment box" },
-                { text: "  ⚒ create_form(deoochform)" },
-                { text: `  ✔ Created. Public link: ${APP_URL}/f/kx28fq`, tone: "ok" },
+                { text: "  ⚒ create_form" },
+                { text: `  ✔ Created. Public link: ${SITE_URL}/f/kx28fq`, tone: "ok" },
               ]}
             />
             <p className="mt-3 text-sm text-muted-foreground">
@@ -153,48 +165,8 @@ export default function ConnectPage() {
         </section>
 
         <section className="mb-10">
-          <h2 className="mb-1 text-base font-bold text-foreground">
-            Option 2 — API token (headless / CI)
-          </h2>
-          <p className="mb-4 text-sm text-muted-foreground">
-            Use this when no browser is available. Create a token on the{" "}
-            <Link
-              href="/settings/tokens"
-              className="font-semibold text-brand hover:text-brand-hover"
-            >
-              Connected apps
-            </Link>{" "}
-            page — it&apos;s shown once, so copy it — then:
-          </p>
-          <Terminal
-            lines={[
-              {
-                prompt: true,
-                text: `claude mcp add --transport http deoochform ${MCP_URL} \\\n  --header "Authorization: Bearer dff_your_token_here"`,
-              },
-            ]}
-          />
-          <Callout>
-            Treat a token like a password. Anyone holding it can read and edit your
-            forms. Revoke it on Connected apps the moment it leaks.
-          </Callout>
-        </section>
-
-        <section className="mb-10">
-          <h2 className="mb-1 text-base font-bold text-foreground">
-            Other MCP clients
-          </h2>
-          <p className="mb-4 text-sm text-muted-foreground">
-            Claude Desktop, claude.ai, ChatGPT, Gemini, DeepSeek, and anything else
-            that speaks remote MCP over HTTP work the same way. Add a custom
-            connector pointing at this URL and sign in when prompted:
-          </p>
-          <Terminal lines={[{ text: MCP_URL }]} />
-        </section>
-
-        <section className="mb-10">
           <h2 className="mb-3 text-base font-bold text-foreground">
-            What Claude can do once connected
+            What it can do once connected
           </h2>
           <div className="divide-y divide-border overflow-hidden rounded-2xl border border-border bg-card">
             {TOOLS.map(([name, desc]) => (
@@ -268,18 +240,40 @@ export default function ConnectPage() {
           </div>
         </section>
 
-        <p className="mt-8 text-center text-sm text-muted-foreground">
-          Still stuck?{" "}
-          <a
-            href="mailto:help@deooch.com"
-            className="font-semibold text-brand hover:text-brand-hover"
-          >
-            Email us
-          </a>{" "}
-          and paste the error Claude Code printed.
-        </p>
-      </div>
-    </Container>
+          {!profile && (
+            <section className="mb-10 rounded-2xl border border-border bg-card p-8 text-center">
+              <h2 className="text-xl font-bold tracking-tight text-foreground">
+                You&apos;ll need an account to connect
+              </h2>
+              <p className="mx-auto mt-2 max-w-md text-sm leading-relaxed text-muted-foreground">
+                The connector signs in as you, so your assistant only ever sees
+                your own forms. Free to start — no card required.
+              </p>
+              <Link
+                href="/signup"
+                className="mt-5 inline-flex h-11 items-center justify-center rounded-lg bg-brand px-6 text-sm font-semibold text-brand-foreground transition-colors hover:bg-brand-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+              >
+                Sign up free
+              </Link>
+            </section>
+          )}
+
+          <p className="mt-8 text-center text-sm text-muted-foreground">
+            Still stuck?{" "}
+            <a
+              href="mailto:help@deooch.com"
+              className="font-semibold text-brand hover:text-brand-hover"
+            >
+              Email us
+            </a>{" "}
+            and paste the error your assistant printed.
+          </p>
+          </div>
+        </Container>
+      </main>
+
+      {!profile && <MarketingFooter />}
+    </div>
   );
 }
 
@@ -360,22 +354,6 @@ function FlowDiagram() {
         </div>
       ))}
     </div>
-  );
-}
-
-function Callout({ children }: { children: React.ReactNode }) {
-  return (
-    <p className="mt-3 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm leading-relaxed text-amber-900">
-      {children}
-    </p>
-  );
-}
-
-function Code({ children }: { children: React.ReactNode }) {
-  return (
-    <code className="rounded bg-muted px-1.5 py-0.5 font-mono text-xs text-foreground">
-      {children}
-    </code>
   );
 }
 

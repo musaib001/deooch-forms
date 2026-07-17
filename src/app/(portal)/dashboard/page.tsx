@@ -100,16 +100,7 @@ export default async function DashboardPage({
   return (
     <Container>
       <div className="mb-8 flex flex-wrap items-center justify-between gap-4">
-        <div className="flex items-center gap-3">
-          <h1 className="text-2xl font-bold tracking-tight text-foreground sm:text-[1.75rem]">Forms</h1>
-          <Link
-            href="/pricing"
-            title="View plans"
-            className="rounded-full bg-brand-subtle px-3 py-1 text-xs font-semibold capitalize text-brand shadow-sm transition-colors hover:bg-brand hover:text-brand-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-          >
-            {profile?.plan ?? "free"} plan
-          </Link>
-        </div>
+        <h1 className="text-2xl font-bold tracking-tight text-foreground sm:text-[1.75rem]">Forms</h1>
         {atFormLimit ? (
           <span
             title={`Your plan is limited to ${quota.formLimit} forms`}

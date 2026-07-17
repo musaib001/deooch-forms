@@ -41,8 +41,8 @@ export function TokensTable() {
     <div className="flex max-w-2xl flex-col gap-6">
       {tokens.length === 0 ? (
         <div className="rounded-xl border border-dashed border-border bg-card px-4 py-8 text-center text-sm text-muted-foreground">
-          No connected apps yet. Add the MCP URL above in Claude or GPT — you&apos;ll
-          be sent here to sign in, then back automatically.
+          No connected apps yet. Add the MCP URL above in your AI assistant —
+          you&apos;ll be sent here to sign in, then back automatically.
         </div>
       ) : (
         <div className="overflow-hidden rounded-xl border border-border bg-card shadow-sm">

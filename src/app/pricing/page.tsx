@@ -25,7 +25,7 @@ export default function PricingPage() {
           <p className="mt-10 text-center text-sm text-muted-foreground">
             All prices in USD, billed annually. Need something custom?{" "}
             <a
-              href="mailto:sales@deoochform.com"
+              href="mailto:sales@deooch.com"
               className="font-semibold text-brand hover:text-brand-hover"
             >
               Talk to us

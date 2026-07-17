@@ -27,7 +27,7 @@ export function TopBar({
     { href: "/dashboard", label: "Forms" },
     ...(role === "owner" ? [{ href: "/settings/members", label: "Members" }] : []),
     { href: "/settings/tokens", label: "Connected apps" },
-    { href: "/connect", label: "Connect an AI" },
+    { href: "/connect", label: "MCP connectors" },
     { href: "/support", label: "Support" },
   ];
 

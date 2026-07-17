@@ -15,7 +15,7 @@ const geistMono = Geist_Mono({
 
 export const metadata: Metadata = {
   title: "deoochform",
-  description: "AI-native form builder — create forms with Claude or by hand",
+  description: "AI-native form builder — create forms with your AI assistant or by hand",
 };
 
 export default function RootLayout({
@@ -28,7 +28,10 @@ export default function RootLayout({
       lang="en"
       className={`${jakarta.variable} ${geistMono.variable} h-full antialiased`}
     >
-      <body className="min-h-full flex flex-col">{children}</body>
+      {/* Extensions (Grammarly et al) inject data-* onto body before hydration. */}
+      <body className="min-h-full flex flex-col" suppressHydrationWarning>
+        {children}
+      </body>
     </html>
   );
 }

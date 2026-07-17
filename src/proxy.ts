@@ -7,8 +7,26 @@ import { NextResponse, type NextRequest } from "next/server";
 // its own auth check (redirecting to /login?next=... so the user lands back
 // here post-login instead of on a bare /login from this gate).
 const PUBLIC_PREFIXES = ["/auth/", "/f/", "/api/mcp", "/.well-known/"];
-const PUBLIC_PATHS = ["/", "/login", "/signup", "/authorize", "/token", "/register"];
+// /pricing and /connect are marketing pages: reachable signed-out, and they
+// render their own nav rather than the portal's.
+const PUBLIC_PATHS = [
+  "/",
+  "/login",
+  "/signup",
+  "/pricing",
+  "/connect",
+  "/authorize",
+  "/token",
+  "/register",
+];
 const PUBLIC_SUBMIT_ROUTE = /^\/api\/forms\/[^/]+\/submit$/;
+
+// Mirrors the double-gated bypass in lib/auth/session.ts. Without it the two
+// disagree: getSessionProfile() hands back DEV_PROFILE, so "/" redirects to
+// /dashboard, and this gate — seeing no real Supabase user — bounces it to
+// /login. Same gate on both sides or the portal is unreachable locally.
+const DEV_BYPASS =
+  process.env.NODE_ENV !== "production" && process.env.DEV_BYPASS_AUTH === "true";
 
 function isPublicPath(pathname: string) {
   return (
@@ -46,7 +64,7 @@ export async function proxy(request: NextRequest) {
     data: { user },
   } = await supabase.auth.getUser();
 
-  if (!user && !isPublicPath(request.nextUrl.pathname)) {
+  if (!user && !DEV_BYPASS && !isPublicPath(request.nextUrl.pathname)) {
     return NextResponse.redirect(new URL("/login", request.url));
   }
 
