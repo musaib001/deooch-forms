@@ -2,31 +2,10 @@
 
 import Link from "next/link";
 import { useState } from "react";
-import {
-  Archive,
-  ChevronDown,
-  ChevronRight,
-  FileEdit,
-  LayoutGrid,
-  Star,
-  Trash2,
-  Users,
-  type LucideIcon,
-} from "lucide-react";
+import { ChevronDown, ChevronRight, Users } from "lucide-react";
+import { VIEWS, type ViewId } from "./views";
 
-export type ViewId = "all" | "drafts" | "favorites" | "archive" | "trash";
-
-export const VIEWS: { id: ViewId; label: string; icon: LucideIcon }[] = [
-  { id: "all", label: "All", icon: LayoutGrid },
-  { id: "drafts", label: "Drafts", icon: FileEdit },
-  { id: "favorites", label: "Favorites", icon: Star },
-  { id: "archive", label: "Archive", icon: Archive },
-  { id: "trash", label: "Trash", icon: Trash2 },
-];
-
-export function isViewId(value: string | undefined): value is ViewId {
-  return VIEWS.some((v) => v.id === value);
-}
+export { isViewId, type ViewId } from "./views";
 
 export function WorkspaceSidebar({
   active,

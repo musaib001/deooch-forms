@@ -6,7 +6,7 @@ import { useState, useTransition } from "react";
 import { Star } from "lucide-react";
 import { formatDate } from "@/lib/date";
 import { Menu, MenuItem } from "@/components/submissions/Menu";
-import type { ViewId } from "./WorkspaceSidebar";
+import type { ViewId } from "./views";
 
 export type FormListItem = {
   id: string;
