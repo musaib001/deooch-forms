@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { BrandMark } from "@/components/BrandMark";
 
 const FEATURES = [
   {
@@ -27,9 +28,7 @@ export function AuthShell({ children }: { children: React.ReactNode }) {
       {/* Mobile brand header (compact, dark) */}
       <div className="bg-foreground px-6 pb-8 pt-10 lg:hidden">
         <Link href="/" className="flex items-center gap-2.5">
-          <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-brand text-sm font-bold text-brand-foreground">
-            d
-          </span>
+          <BrandMark className="h-8 w-8" />
           <span className="text-base font-bold tracking-tight text-white">
             deoochform
           </span>
@@ -55,9 +54,7 @@ export function AuthShell({ children }: { children: React.ReactNode }) {
       {/* Desktop brand panel */}
       <aside className="relative hidden flex-col justify-between bg-foreground px-10 py-10 lg:flex xl:px-16">
         <Link href="/" className="flex items-center gap-2.5">
-          <span className="flex h-9 w-9 items-center justify-center rounded-lg bg-brand text-base font-bold text-brand-foreground">
-            d
-          </span>
+          <BrandMark className="h-9 w-9" />
           <span className="text-lg font-bold tracking-tight text-white">
             deoochform
           </span>

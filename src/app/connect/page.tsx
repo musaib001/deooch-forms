@@ -165,6 +165,60 @@ export default async function ConnectPage() {
         </section>
 
         <section className="mb-10">
+          <div className="mb-4 flex items-center gap-2.5">
+            <ChatGptLogo />
+            <h2 className="text-base font-bold text-foreground">
+              Adding it in ChatGPT (web)
+            </h2>
+          </div>
+          <p className="mb-4 text-sm text-muted-foreground">
+            In the ChatGPT web app you add deoochform as a connector — the same
+            place plugins live. Custom connectors need a plan that supports them
+            (Plus, Pro, or Business), with developer mode / connectors enabled.
+          </p>
+
+          <Step n={1} title="Open Settings → Connectors">
+            <p className="mb-3 text-sm text-muted-foreground">
+              Click your name in ChatGPT, open{" "}
+              <span className="font-semibold text-foreground">Settings</span>,
+              then{" "}
+              <span className="font-semibold text-foreground">Connectors</span>.
+              Choose{" "}
+              <span className="font-semibold text-foreground">
+                Create / Add custom connector
+              </span>
+              .
+            </p>
+          </Step>
+
+          <Step n={2} title="Fill in the connector">
+            <p className="mb-3 text-sm text-muted-foreground">
+              Name it <span className="font-semibold text-foreground">deoochform</span>,
+              paste the MCP URL as the server address, and leave authentication
+              set to <span className="font-semibold text-foreground">OAuth</span>.
+            </p>
+            <Terminal lines={[{ text: MCP_URL }]} />
+          </Step>
+
+          <Step n={3} title="Connect and sign in">
+            <p className="mb-3 text-sm text-muted-foreground">
+              Save, then click{" "}
+              <span className="font-semibold text-foreground">Connect</span>.
+              ChatGPT opens deoochform&apos;s sign-in — approve it and you&apos;re
+              sent back with the connector linked.
+            </p>
+          </Step>
+
+          <Step n={4} title="Turn it on in a chat" last>
+            <p className="text-sm text-muted-foreground">
+              In a conversation, open the{" "}
+              <span className="font-semibold text-foreground">+</span> (tools)
+              menu, enable the deoochform connector, then ask it to build a form.
+            </p>
+          </Step>
+        </section>
+
+        <section className="mb-10">
           <h2 className="mb-3 text-base font-bold text-foreground">
             What it can do once connected
           </h2>
@@ -371,6 +425,21 @@ function ArrowIcon() {
     >
       <path d="M5 12h14M13 6l6 6-6 6" />
     </svg>
+  );
+}
+
+function ChatGptLogo() {
+  return (
+    <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-foreground text-background">
+      <svg
+        viewBox="0 0 24 24"
+        className="h-5 w-5"
+        fill="currentColor"
+        aria-hidden
+      >
+        <path d="M22.28 9.82a5.98 5.98 0 0 0-.52-4.91 6.05 6.05 0 0 0-6.51-2.9A5.98 5.98 0 0 0 10.75.5a6.05 6.05 0 0 0-5.77 4.19 5.98 5.98 0 0 0-4 2.9 6.05 6.05 0 0 0 .74 7.1 5.98 5.98 0 0 0 .52 4.9 6.05 6.05 0 0 0 6.51 2.91A5.98 5.98 0 0 0 13.25 23.5a6.05 6.05 0 0 0 5.77-4.2 5.98 5.98 0 0 0 4-2.9 6.05 6.05 0 0 0-.74-7.1Zm-8.98 12.5a4.48 4.48 0 0 1-2.88-1.04l.14-.08 4.78-2.76a.78.78 0 0 0 .4-.68v-6.74l2.02 1.17a.07.07 0 0 1 .04.06v5.58a4.5 4.5 0 0 1-4.5 4.49Zm-9.66-4.13a4.48 4.48 0 0 1-.54-3.02l.14.09 4.78 2.76a.78.78 0 0 0 .78 0l5.84-3.37v2.33a.07.07 0 0 1-.03.06l-4.84 2.79a4.5 4.5 0 0 1-6.13-1.64Zm-1.26-10.4a4.48 4.48 0 0 1 2.34-1.97v5.68a.78.78 0 0 0 .39.68l5.84 3.37-2.02 1.17a.07.07 0 0 1-.07 0l-4.83-2.79a4.5 4.5 0 0 1-1.65-6.14Zm16.6 3.86-5.84-3.38 2.02-1.16a.07.07 0 0 1 .07 0l4.83 2.78a4.49 4.49 0 0 1-.68 8.1V12.6a.78.78 0 0 0-.4-.67Zm2.01-3.03-.14-.08-4.77-2.78a.78.78 0 0 0-.79 0L9.7 9.13V6.8a.07.07 0 0 1 .03-.07l4.83-2.78a4.5 4.5 0 0 1 6.68 4.66ZM8.6 12.86l-2.02-1.16a.07.07 0 0 1-.04-.06V6.06a4.5 4.5 0 0 1 7.38-3.45l-.14.08L9 5.45a.78.78 0 0 0-.4.68v6.73Zm1.1-2.37L12.3 9l2.6 1.5v3l-2.6 1.5-2.6-1.5v-3Z" />
+      </svg>
+    </span>
   );
 }
 

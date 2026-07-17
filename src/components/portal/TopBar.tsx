@@ -4,6 +4,7 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import { createClient } from "@/lib/supabase/browser";
+import { BrandMark } from "@/components/BrandMark";
 
 type NavItem = { href: string; label: string };
 
@@ -63,9 +64,7 @@ export function TopBar({
     <header className="sticky top-0 z-40 bg-slate-900">
       <div className="mx-auto flex h-14 max-w-6xl items-center gap-1 px-4 sm:px-6">
         <Link href="/dashboard" className="mr-4 flex items-center gap-2">
-          <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-brand text-sm font-bold text-brand-foreground">
-            d
-          </span>
+          <BrandMark className="h-7 w-7" />
           <span className="hidden text-base font-bold tracking-tight text-white sm:inline">
             deoochform
           </span>
