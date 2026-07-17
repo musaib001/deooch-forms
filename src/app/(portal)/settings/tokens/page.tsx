@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { TokensTable } from "@/components/settings/TokensTable";
 import { Container } from "@/components/portal/Container";
 
@@ -13,7 +14,11 @@ export default function TokensPage() {
           {`${process.env.NEXT_PUBLIC_APP_URL ?? ""}/api/mcp`}
         </code>
         . You&apos;ll be asked to sign in here, then sent back to the app. Revoking
-        a connection forces it to sign in again.
+        a connection forces it to sign in again. New to this?{" "}
+        <Link href="/connect" className="font-semibold text-brand hover:text-brand-hover">
+          Follow the step-by-step guide
+        </Link>
+        .
       </p>
       <TokensTable />
     </Container>

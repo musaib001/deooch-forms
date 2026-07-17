@@ -19,7 +19,7 @@ const FAQS = [
   },
   {
     q: "How do I build forms with AI?",
-    a: "Create an API token under API Tokens, then connect Claude or any MCP-compatible assistant to your account. Describe the form you want and it appears in your dashboard.",
+    a: "Connect Claude — or any MCP-compatible assistant — to your account, then just describe the form you want and it appears in your dashboard. The Connect to Claude page walks through setup, troubleshooting, and common errors.",
   },
   {
     q: "How do I invite teammates?",
@@ -43,6 +43,20 @@ export default function SupportPage() {
       </div>
 
       <div className="mb-8 grid gap-4 sm:grid-cols-2">
+        <Link
+          href="/connect"
+          className="group rounded-2xl border border-border bg-card p-5 transition-colors hover:border-brand/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+        >
+          <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-brand-subtle text-brand">
+            <PlugIcon />
+          </span>
+          <p className="mt-3 text-sm font-semibold text-foreground group-hover:text-brand">
+            Connect to Claude
+          </p>
+          <p className="mt-0.5 text-sm text-muted-foreground">
+            Set up the MCP connection and build forms by asking.
+          </p>
+        </Link>
         <a
           href="mailto:help@deooch.com"
           className="group rounded-2xl border border-border bg-card p-5 transition-colors hover:border-brand/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
@@ -102,6 +116,14 @@ export default function SupportPage() {
         </p>
       </div>
     </Container>
+  );
+}
+
+function PlugIcon() {
+  return (
+    <svg className="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+      <path d="M9 2v6M15 2v6M6 8h12v3a6 6 0 0 1-12 0V8ZM12 17v5" />
+    </svg>
   );
 }
 
