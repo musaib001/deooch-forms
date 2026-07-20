@@ -58,7 +58,7 @@ export function FormsBoard({
       ) : (
         <div
           className="grid gap-4"
-          style={{ gridTemplateColumns: "repeat(auto-fill, minmax(240px, 1fr))" }}
+          style={{ gridTemplateColumns: "repeat(auto-fill, minmax(300px, 1fr))" }}
         >
           {visible.map((form, i) => (
             <FormCard key={form.id} form={form} view={view} index={i} />

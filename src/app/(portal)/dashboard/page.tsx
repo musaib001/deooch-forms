@@ -3,7 +3,6 @@ import { createClient } from "@/lib/supabase/server";
 import { getSessionProfile } from "@/lib/auth/session";
 import { buttonPrimaryClass } from "@/lib/ui";
 import { quotaFor } from "@/lib/plans";
-import { Container } from "@/components/portal/Container";
 import { WorkspaceSidebar } from "@/components/portal/WorkspaceSidebar";
 import { isViewId, type ViewId } from "@/components/portal/views";
 import { type FormListItem } from "@/components/portal/FormRow";
@@ -106,47 +105,57 @@ export default async function DashboardPage({
   };
 
   return (
-    <Container>
-      <div className="mb-8 flex flex-wrap items-center justify-between gap-4">
-        <h1 className="text-2xl font-bold tracking-tight text-foreground sm:text-[1.75rem]">Forms</h1>
-        {atFormLimit ? (
-          <span
-            title={`Your plan is limited to ${quota.formLimit} forms`}
-            className="cursor-not-allowed rounded-lg border border-border bg-muted px-4 py-2.5 text-sm font-semibold text-muted-foreground"
-          >
-            New form
-          </span>
-        ) : (
-          <Link href="/forms/new" className={buttonPrimaryClass + " shadow-sm"}>
-            <PlusIcon />
-            New form
-          </Link>
-        )}
-      </div>
-
-      {(atFormLimit || atSubmissionLimit) && (
-        <p className="mb-5 flex items-center gap-2 rounded-lg border border-brand/30 bg-brand-subtle px-4 py-3 text-sm text-brand">
-          <InfoIcon />
-          <span>
-            {atSubmissionLimit
-              ? `You've reached the ${quota.submissionLimit}-submission limit — your forms have been closed to new responses.`
-              : `You've used all ${quota.formLimit} forms on your current plan.`}{" "}
-            <Link
-              href="/pricing"
-              className="font-semibold underline underline-offset-2 hover:text-brand-hover"
-            >
-              Upgrade your plan
-            </Link>
-          </span>
-        </p>
-      )}
-
+    // Full-bleed layout: the sidebar sits flush against the left, the content
+    // fills the rest of the viewport. Intentionally NOT wrapped in <Container>
+    // (max-w-5xl) — that centered column wasted ~40% of a wide screen.
+    <div className="w-full px-5 py-7 sm:px-8 lg:px-10">
       <div className="flex flex-col gap-6 md:flex-row md:gap-8">
-        <aside className="shrink-0 md:w-48">
+        <aside className="shrink-0 md:w-60">
           <WorkspaceSidebar active={view} counts={counts} />
         </aside>
 
         <div className="min-w-0 flex-1">
+          <div className="mb-6 flex flex-wrap items-start justify-between gap-4">
+            <div>
+              <h1 className="text-2xl font-bold tracking-tight text-foreground sm:text-[1.75rem]">
+                Forms
+              </h1>
+              <p className="mt-1 text-sm text-muted-foreground">
+                Manage, publish, and track responses across your workspace.
+              </p>
+            </div>
+            {atFormLimit ? (
+              <span
+                title={`Your plan is limited to ${quota.formLimit} forms`}
+                className="cursor-not-allowed rounded-lg border border-border bg-muted px-4 py-2.5 text-sm font-semibold text-muted-foreground"
+              >
+                New form
+              </span>
+            ) : (
+              <Link href="/forms/new" className={buttonPrimaryClass + " shadow-sm"}>
+                <PlusIcon />
+                New form
+              </Link>
+            )}
+          </div>
+
+          {(atFormLimit || atSubmissionLimit) && (
+            <p className="mb-5 flex items-center gap-2 rounded-lg border border-brand/30 bg-brand-subtle px-4 py-3 text-sm text-brand">
+              <InfoIcon />
+              <span>
+                {atSubmissionLimit
+                  ? `You've reached the ${quota.submissionLimit}-submission limit — your forms have been closed to new responses.`
+                  : `You've used all ${quota.formLimit} forms on your current plan.`}{" "}
+                <Link
+                  href="/pricing"
+                  className="font-semibold underline underline-offset-2 hover:text-brand-hover"
+                >
+                  Upgrade your plan
+                </Link>
+              </span>
+            </p>
+          )}
+
           {forms.length === 0 ? (
             <div className="rounded-2xl border border-dashed border-border bg-card px-6 py-16 text-center">
               <p className="text-base font-semibold text-foreground">
@@ -182,7 +191,7 @@ export default async function DashboardPage({
           </Link>
         </nav>
       </footer>
-    </Container>
+    </div>
   );
 }
 

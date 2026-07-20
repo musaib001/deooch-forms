@@ -62,7 +62,7 @@ export function TopBar({
 
   return (
     <header className="sticky top-0 z-40 bg-slate-900">
-      <div className="mx-auto flex h-14 max-w-6xl items-center gap-1 px-4 sm:px-6">
+      <div className="flex h-14 w-full items-center gap-1 px-5 sm:px-8 lg:px-10">
         <Link href="/dashboard" className="mr-4 flex items-center gap-2">
           <BrandMark className="h-7 w-7" />
           <span className="hidden text-base font-bold tracking-tight text-white sm:inline">
