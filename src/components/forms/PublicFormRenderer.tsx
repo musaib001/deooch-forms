@@ -33,7 +33,17 @@ export function PublicFormRenderer({
   const [previewValid, setPreviewValid] = useState(false);
   const fieldRefs = useRef<Record<string, HTMLElement | null>>({});
 
-  const orderedFields = [...fields].sort((a, b) => a.order - b.order);
+  const orderedFields = [...fields]
+    .sort((a, b) => a.order - b.order)
+    // ponytail: MCP clients sometimes add a heading repeating the title despite
+    // the tool description saying not to; drop it rather than render it twice.
+    .filter(
+      (f) =>
+        !(
+          f.type === "heading" &&
+          f.label.trim().toLowerCase() === title.trim().toLowerCase()
+        )
+    );
   const inputFields = orderedFields.filter(isInputField);
 
   function setValue(fieldId: string, value: Value) {
