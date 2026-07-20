@@ -8,11 +8,15 @@
   --muted-foreground: #78716c;
   --border: #e7e5e4;
   --input: #d6d3d1;
-  --brand: #ea580c;
-  --brand-hover: #c2410c;
+  --brand: #4f46e5;
+  --brand-hover: #4338ca;
   --brand-foreground: #ffffff;
-  --brand-subtle: #fff1e9;
-  --ring: #f97316;
+  --brand-subtle: #eef0ff;
+  --ring: #6366f1;
+  /* The deoochform logo mark stays orange regardless of the indigo UI accent,
+     so the brand identity is stable even if --brand is re-themed. */
+  --logo: #ea580c;
+  --logo-foreground: #ffffff;
   --destructive: #dc2626;
   --destructive-subtle: #fef2f2;
   --success: #16a34a;
@@ -38,6 +42,8 @@
   --color-brand-hover: var(--brand-hover);
   --color-brand-foreground: var(--brand-foreground);
   --color-brand-subtle: var(--brand-subtle);
+  --color-logo: var(--logo);
+  --color-logo-foreground: var(--logo-foreground);
   --color-ring: var(--ring);
   --color-destructive: var(--destructive);
   --color-destructive-subtle: var(--destructive-subtle);
@@ -54,6 +60,22 @@ body {
   background: var(--background);
   color: var(--foreground);
   font-family: var(--font-sans), system-ui, sans-serif;
+}
+
+/* Card entrance for the forms grid; staggered via inline animation-delay. */
+@keyframes rise {
+  from {
+    opacity: 0;
+    transform: translateY(14px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+.animate-rise {
+  animation: rise 0.5s cubic-bezier(0.22, 1, 0.36, 1) both;
 }
 
 @media (prefers-reduced-motion: reduce) {

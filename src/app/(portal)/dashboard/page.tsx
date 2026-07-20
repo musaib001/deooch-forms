@@ -6,7 +6,8 @@ import { quotaFor } from "@/lib/plans";
 import { Container } from "@/components/portal/Container";
 import { WorkspaceSidebar } from "@/components/portal/WorkspaceSidebar";
 import { isViewId, type ViewId } from "@/components/portal/views";
-import { FormRow, type FormListItem } from "@/components/portal/FormRow";
+import { type FormListItem } from "@/components/portal/FormRow";
+import { FormsBoard } from "@/components/portal/FormsBoard";
 
 type FormRecord = {
   id: string;
@@ -97,6 +98,13 @@ export default async function DashboardPage({
   const atSubmissionLimit =
     quota.submissionLimit !== null && totalResponses >= quota.submissionLimit;
 
+  const stats = {
+    total: counts.all,
+    published: active.filter((f) => f.status === "published").length,
+    drafts: counts.drafts,
+    responses: totalResponses,
+  };
+
   return (
     <Container>
       <div className="mb-8 flex flex-wrap items-center justify-between gap-4">
@@ -155,14 +163,25 @@ export default async function DashboardPage({
               )}
             </div>
           ) : (
-            <div className="overflow-hidden rounded-2xl border border-border bg-card shadow-sm">
-              {forms.map((form) => (
-                <FormRow key={form.id} form={form} view={view} />
-              ))}
-            </div>
+            <FormsBoard forms={forms} view={view} stats={stats} />
           )}
         </div>
       </div>
+
+      <footer className="mt-12 flex flex-wrap items-center justify-between gap-3 border-t border-border pt-5 text-xs text-muted-foreground">
+        <span>© 2026 deoochform · All systems operational</span>
+        <nav className="flex gap-5">
+          <Link href="/support" className="transition-colors hover:text-brand">
+            Support
+          </Link>
+          <Link href="/connect" className="transition-colors hover:text-brand">
+            MCP connectors
+          </Link>
+          <Link href="/pricing" className="transition-colors hover:text-brand">
+            Pricing
+          </Link>
+        </nav>
+      </footer>
     </Container>
   );
 }

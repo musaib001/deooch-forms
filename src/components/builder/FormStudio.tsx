@@ -1086,6 +1086,12 @@ function FieldBody({
           Respondent pastes a file link
         </div>
       );
+    case "upload":
+      return (
+        <div className="pointer-events-none flex h-14 w-full items-center justify-center rounded-lg border border-dashed border-input bg-background text-sm text-muted-foreground/60">
+          Respondent uploads a file (image or PDF, up to 5&nbsp;MB)
+        </div>
+      );
     case "select":
     case "radio":
     case "checkbox": {

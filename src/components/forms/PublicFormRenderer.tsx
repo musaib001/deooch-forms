@@ -134,6 +134,8 @@ export function PublicFormRenderer({
               <FieldRow
                 key={field.id}
                 field={field}
+                formId={formId}
+                preview={preview}
                 value={values[field.id]}
                 error={errors[field.id]}
                 setValue={(v) => setValue(field.id, v)}
@@ -186,6 +188,8 @@ export function PublicFormRenderer({
 
 function FieldRow({
   field,
+  formId,
+  preview,
   value,
   error,
   setValue,
@@ -193,6 +197,8 @@ function FieldRow({
   registerRef,
 }: {
   field: Field;
+  formId: string;
+  preview: boolean;
   value: Value | undefined;
   error?: string;
   setValue: (value: Value) => void;
@@ -224,6 +230,8 @@ function FieldRow({
       )}
       <FieldControl
         field={field}
+        formId={formId}
+        preview={preview}
         value={value}
         invalid={!!error}
         describedBy={describedBy}
@@ -240,8 +248,108 @@ function FieldRow({
   );
 }
 
+function UploadControl({
+  formId,
+  preview,
+  value,
+  invalid,
+  describedBy,
+  setValue,
+  onBlur,
+  registerRef,
+}: {
+  formId: string;
+  preview: boolean;
+  value: string | undefined;
+  invalid: boolean;
+  describedBy?: string;
+  setValue: (value: Value) => void;
+  onBlur: () => void;
+  registerRef: (el: HTMLElement | null) => void;
+}) {
+  const [uploading, setUploading] = useState(false);
+  const [fileName, setFileName] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
+
+  const MAX_BYTES = 5 * 1024 * 1024;
+  const allowed = (t: string) => t.startsWith("image/") || t === "application/pdf";
+
+  function reject(message: string) {
+    setError(message);
+    setFileName(null);
+    setValue("");
+  }
+
+  async function onSelect(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setError(null);
+
+    // Client-side guard for fast feedback; the server re-checks authoritatively.
+    if (file.size > MAX_BYTES) return reject("File exceeds the 5 MB limit.");
+    if (!allowed(file.type)) return reject("Only images and PDF files are allowed.");
+
+    setFileName(file.name);
+
+    // Preview never persists, and the form may still be a draft (the upload
+    // endpoint only accepts published forms), so skip the network and just mark
+    // the field satisfied so validation can be exercised.
+    if (preview) {
+      setValue(`preview://${file.name}`);
+      return;
+    }
+
+    setUploading(true);
+    try {
+      const body = new FormData();
+      body.append("file", file);
+      const res = await fetch(`/api/forms/${formId}/upload`, { method: "POST", body });
+      const json = await res.json().catch(() => ({}));
+      if (!res.ok) return reject(json.error ?? "Upload failed. Try again.");
+      setValue(json.url as string);
+    } catch {
+      reject("Upload failed. Check your connection and try again.");
+    } finally {
+      setUploading(false);
+    }
+  }
+
+  const hasFile = !!value && !error;
+
+  return (
+    <div className="flex flex-col gap-2">
+      <label
+        className={
+          "flex h-14 w-full cursor-pointer items-center justify-center gap-2 rounded-lg border border-dashed bg-background px-4 text-sm text-muted-foreground transition-colors " +
+          (invalid ? "border-destructive" : "border-input hover:border-brand")
+        }
+      >
+        <input
+          type="file"
+          accept="image/*,application/pdf"
+          ref={registerRef}
+          aria-invalid={invalid || undefined}
+          aria-describedby={describedBy}
+          onChange={onSelect}
+          onBlur={onBlur}
+          disabled={uploading}
+          className="sr-only"
+        />
+        {uploading
+          ? "Uploading…"
+          : hasFile
+            ? `✓ ${fileName ?? "File attached"}`
+            : "Choose a file (image or PDF, up to 5 MB)"}
+      </label>
+      {error && <p className="text-[13px] font-medium text-destructive">{error}</p>}
+    </div>
+  );
+}
+
 function FieldControl({
   field,
+  formId,
+  preview,
   value,
   invalid,
   describedBy,
@@ -250,6 +358,8 @@ function FieldControl({
   registerRef,
 }: {
   field: Field;
+  formId: string;
+  preview: boolean;
   value: Value | undefined;
   invalid: boolean;
   describedBy?: string;
@@ -404,6 +514,19 @@ function FieldControl({
           value={(value as string) ?? ""}
           onChange={(e) => setValue(e.target.value)}
           className={inputClass}
+        />
+      );
+    case "upload":
+      return (
+        <UploadControl
+          formId={formId}
+          preview={preview}
+          value={value as string | undefined}
+          invalid={invalid}
+          describedBy={describedBy}
+          setValue={setValue}
+          onBlur={onBlur}
+          registerRef={registerRef}
         />
       );
     default:

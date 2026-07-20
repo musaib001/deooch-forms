@@ -19,7 +19,9 @@ const PUBLIC_PATHS = [
   "/token",
   "/register",
 ];
-const PUBLIC_SUBMIT_ROUTE = /^\/api\/forms\/[^/]+\/submit$/;
+// Public submission endpoints for a form: respondents are anonymous. The
+// /files download route is deliberately NOT here — it authorizes the owner.
+const PUBLIC_SUBMIT_ROUTE = /^\/api\/forms\/[^/]+\/(submit|upload)$/;
 
 // Mirrors the double-gated bypass in lib/auth/session.ts. Without it the two
 // disagree: getSessionProfile() hands back DEV_PROFILE, so "/" redirects to

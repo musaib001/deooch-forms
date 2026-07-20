@@ -1,8 +1,9 @@
-import { NextResponse } from "next/server";
+import { NextResponse, after } from "next/server";
 import { z } from "zod";
 import { createAdminClient } from "@/lib/supabase/admin";
 import type { Field } from "@/lib/forms/schema";
 import { quotaFor } from "@/lib/plans";
+import { notifyOwnerOfSubmission } from "@/lib/email/notify";
 
 const submitSchema = z.object({
   answers: z.record(z.string(), z.union([z.string(), z.array(z.string())])),
@@ -27,7 +28,7 @@ export async function POST(request: Request, { params }: Params) {
   const admin = createAdminClient();
   const { data: form } = await admin
     .from("forms")
-    .select("id, status, fields, created_by")
+    .select("id, title, status, fields, created_by")
     .eq("id", formId)
     .eq("status", "published")
     // Admin client bypasses RLS, so trashed forms must be excluded explicitly
@@ -56,6 +57,21 @@ export async function POST(request: Request, { params }: Params) {
   });
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+
+  // Best-effort owner email, sent after the response so it adds no latency and
+  // can't fail the submission.
+  after(() =>
+    notifyOwnerOfSubmission(
+      admin,
+      {
+        id: form.id,
+        title: form.title,
+        created_by: form.created_by,
+        fields: form.fields as Field[],
+      },
+      body.data.answers
+    ).catch((e) => console.error("submission notification failed", e))
+  );
 
   await closeFormsIfFreeAccountAtCap(admin, form.created_by);
 

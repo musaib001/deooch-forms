@@ -14,6 +14,7 @@ export const FIELD_TYPES = [
   "checkbox",
   "date",
   "file",
+  "upload",
   "heading",
 ] as const;
 
@@ -35,6 +36,7 @@ export const FIELD_TYPE_LABELS: Record<FieldType, string> = {
   checkbox: "Multiple choice",
   date: "Date",
   file: "File link",
+  upload: "File upload",
   heading: "Section heading",
 };
 

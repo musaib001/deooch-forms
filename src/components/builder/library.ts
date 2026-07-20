@@ -15,6 +15,7 @@ import {
   Mail,
   MapPin,
   Paperclip,
+  Upload,
   Phone,
   Repeat,
   Type,
@@ -63,6 +64,7 @@ export const LIBRARY: LibraryCategory[] = [
     items: [
       { type: "heading", name: "Section Heading", description: "Group fields visually", icon: Heading },
       { type: "file", name: "File Link", description: "Link to an upload", icon: Paperclip },
+      { type: "upload", name: "File Upload", description: "Respondent uploads a file", icon: Upload },
     ],
   },
   {

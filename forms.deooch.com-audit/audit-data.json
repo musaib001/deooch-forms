@@ -1,0 +1,93 @@
+{
+  "summary": {
+    "health_score": 72,
+    "business_type": "SaaS (AI-native form builder)",
+    "top_findings": [
+      "Thin content: single indexable marketing page, no blog/docs/use-case/About",
+      "Weak E-E-A-T: no About/company/author info or trust markers",
+      "No llms.txt (307 redirects to /login)",
+      "Partial security headers: only HSTS present",
+      "Soft-404: unknown routes return login shell, not a 404"
+    ],
+    "quick_wins": [
+      "Real robots.txt (done)",
+      "Real sitemap.xml (done)",
+      "Keyword title + canonical + Open Graph + Twitter card (done)",
+      "Auto-generated OG image (done)",
+      "Organization + WebSite + SoftwareApplication JSON-LD (done)"
+    ]
+  },
+  "categories": [
+    {
+      "name": "Technical SEO",
+      "score": 82,
+      "what_works": ["HTTPS + HSTS", "valid robots.txt", "valid sitemap.xml", "canonical tag", "mobile viewport", "Next.js 16 on Vercel"],
+      "findings": [
+        {"title": "Partial security headers", "severity": "Low", "description": "Only HSTS is set on responses.", "recommendation": "Add X-Content-Type-Options: nosniff, X-Frame-Options/CSP frame-ancestors, and Referrer-Policy via next.config headers()."},
+        {"title": "Soft-404 on unknown routes", "severity": "Low", "description": "Unknown paths resolve to the login shell via the auth proxy rather than a real 404.", "recommendation": "Serve a proper not-found with a 404 status for unmatched routes."}
+      ]
+    },
+    {
+      "name": "Content Quality",
+      "score": 55,
+      "what_works": ["clear value proposition", "benefit-driven feature copy", "logical section flow"],
+      "findings": [
+        {"title": "Thin content footprint", "severity": "Medium", "description": "Single indexable content page; no blog/docs/use-case pages targeting search queries.", "recommendation": "Add 2-3 use-case landing pages and optionally /blog or /docs targeting 'AI form builder', 'MCP forms', etc."},
+        {"title": "Weak E-E-A-T signals", "severity": "Medium", "description": "No About page, company/team info, testimonials, or sameAs social links.", "recommendation": "Add an About page + trust markers and sameAs on Organization schema."}
+      ]
+    },
+    {
+      "name": "On-Page SEO",
+      "score": 80,
+      "what_works": ["keyword title", "strong meta description", "single H1 on homepage", "title template without double suffix", "canonical + OG on all pages"],
+      "findings": [
+        {"title": "Dual H1 on login layout", "severity": "Low", "description": "The login split-screen renders two H1s.", "recommendation": "Demote the marketing aside heading to h2/p. Low priority; login is not an index target."}
+      ]
+    },
+    {
+      "name": "Schema / Structured Data",
+      "score": 85,
+      "what_works": ["Organization + WebSite (site-wide)", "SoftwareApplication + free Offer (homepage)", "valid JSON-LD with @id graph linking"],
+      "findings": [
+        {"title": "Missing sameAs / breadcrumbs", "severity": "Low", "description": "Organization has no sameAs; no BreadcrumbList.", "recommendation": "Add sameAs once social profiles exist; add BreadcrumbList if page hierarchy deepens."}
+      ]
+    },
+    {
+      "name": "Performance (CWV)",
+      "score": 70,
+      "what_works": ["static prerendering", "preloaded fonts", "minimal third-party JS", "Vercel edge delivery"],
+      "findings": [
+        {"title": "No field data", "severity": "Info", "description": "Near-zero traffic means no CrUX field CWV.", "recommendation": "Run a Lighthouse lab pass; revisit CrUX once traffic accrues."}
+      ]
+    },
+    {
+      "name": "AI Search Readiness",
+      "score": 60,
+      "what_works": ["rich structured data", "clean semantic HTML", "clear citable copy", "OG metadata"],
+      "findings": [
+        {"title": "No llms.txt", "severity": "Medium", "description": "/llms.txt returns 307 -> /login, not a real file.", "recommendation": "Add an llms.txt route and exclude it from the auth proxy."},
+        {"title": "Limited citable content", "severity": "Medium", "description": "Thin content limits citable passages for AI engines.", "recommendation": "The content-depth work doubles as AI-search improvement."}
+      ]
+    },
+    {
+      "name": "Images",
+      "score": 75,
+      "what_works": ["OG share image present", "aria-hidden brand SVGs", "favicon .ico + .svg"],
+      "findings": [
+        {"title": "Alt text for future imagery", "severity": "Low", "description": "Few content images today.", "recommendation": "Add descriptive alt to future screenshots/marketing images."}
+      ]
+    }
+  ],
+  "action_plan": {
+    "phases": [
+      {"name": "Phase 1: Critical Fixes", "timeframe": "Week 1", "items": ["robots.txt (done)", "sitemap.xml (done)", "proxy exclusions (done)", "title/canonical/OG/Twitter (done)", "OG image (done)", "Organization/WebSite/SoftwareApplication JSON-LD (done)"]},
+      {"name": "Phase 2: High-Impact Improvements", "timeframe": "Weeks 2-3", "items": ["llms.txt route + proxy exclusion", "security headers via next.config", "sameAs on Organization schema"]},
+      {"name": "Phase 3: Content & Authority", "timeframe": "Month 2", "items": ["About page + trust markers", "2-3 use-case landing pages", "optional /blog or /docs", "add new pages to sitemap"]},
+      {"name": "Phase 4: Monitoring & Iteration", "timeframe": "Ongoing", "items": ["submit sitemap in GSC", "track impressions/clicks/CTR", "Lighthouse lab pass; revisit CrUX"]}
+    ]
+  },
+  "artifacts": {
+    "findings_dir": "findings/",
+    "screenshots_dir": "screenshots/"
+  }
+}

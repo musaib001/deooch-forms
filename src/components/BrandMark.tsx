@@ -3,7 +3,7 @@
 export function BrandMark({ className = "h-8 w-8" }: { className?: string }) {
   return (
     <span
-      className={`flex items-center justify-center rounded-lg bg-brand text-brand-foreground ${className}`}
+      className={`flex items-center justify-center rounded-lg bg-logo text-logo-foreground ${className}`}
     >
       <svg
         viewBox="0 0 32 32"
