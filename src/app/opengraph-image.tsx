@@ -28,15 +28,19 @@ export default function OgImage() {
               width: 64,
               height: 64,
               borderRadius: 16,
-              background: "#ea580c",
+              background: "linear-gradient(135deg, #65a30d, #0d9488)",
               display: "flex",
               alignItems: "center",
               justifyContent: "center",
-              fontSize: 40,
-              fontWeight: 800,
             }}
           >
-            d
+            {/* Satori renders plain SVG children; keep in sync with app/icon.svg. */}
+            <svg width={40} height={40} viewBox="8 8 30 32" fill="#ffffff">
+              <path
+                fillRule="evenodd"
+                d="M11 9h11a15 15 0 0 1 0 30H11a2 2 0 0 1-2-2V11a2 2 0 0 1 2-2Zm5.5 8.5h16a1.75 1.75 0 0 1 0 3.5h-16a1.75 1.75 0 0 1 0-3.5Zm0 9.5h10a1.75 1.75 0 0 1 0 3.5h-10a1.75 1.75 0 0 1 0-3.5Z"
+              />
+            </svg>
           </div>
           <div style={{ fontSize: 40, fontWeight: 800 }}>deoochform</div>
         </div>

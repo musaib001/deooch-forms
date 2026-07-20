@@ -1,24 +1,22 @@
-// The deoochform mark: a checked form/checklist glyph on the brand tile.
-// currentColor drives the glyph so it inherits brand-foreground on the tile.
+// The deoochform mark: a solid D with the F knocked out as two bars, which
+// double as form rows. Keep this path in sync with app/icon.svg + apple-icon.svg.
+// The tile gradient comes from --logo-gradient so re-theming happens in one place.
 export function BrandMark({ className = "h-8 w-8" }: { className?: string }) {
   return (
     <span
-      className={`flex items-center justify-center rounded-lg bg-logo text-logo-foreground ${className}`}
+      className={`flex items-center justify-center rounded-lg bg-[image:var(--logo-gradient)] text-logo-foreground ${className}`}
     >
       <svg
-        viewBox="0 0 32 32"
-        className="h-[60%] w-[60%]"
-        fill="none"
-        stroke="currentColor"
-        strokeWidth={2.4}
-        strokeLinecap="round"
-        strokeLinejoin="round"
+        // Cropped to the glyph's bounding box so the tile controls the padding.
+        viewBox="8 8 30 32"
+        className="h-[62%] w-[62%]"
+        fill="currentColor"
         aria-hidden
       >
-        <path d="M7 11l1.9 1.9L12.5 9.3" />
-        <path d="M16.5 11.5H25" />
-        <path d="M7 20l1.9 1.9L12.5 18.3" />
-        <path d="M16.5 20.5H25" />
+        <path
+          fillRule="evenodd"
+          d="M11 9h11a15 15 0 0 1 0 30H11a2 2 0 0 1-2-2V11a2 2 0 0 1 2-2Zm5.5 8.5h16a1.75 1.75 0 0 1 0 3.5h-16a1.75 1.75 0 0 1 0-3.5Zm0 9.5h10a1.75 1.75 0 0 1 0 3.5h-10a1.75 1.75 0 0 1 0-3.5Z"
+        />
       </svg>
     </span>
   );

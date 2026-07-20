@@ -13,9 +13,14 @@
   --brand-foreground: #ffffff;
   --brand-subtle: #eef0ff;
   --ring: #6366f1;
-  /* The deoochform logo mark stays orange regardless of the indigo UI accent,
-     so the brand identity is stable even if --brand is re-themed. */
-  --logo: #ea580c;
+  /* The deoochform logo mark keeps its own lime→teal identity regardless of
+     the indigo UI accent, so branding is stable even if --brand is re-themed.
+     --logo is the flat fallback for surfaces that can't take a gradient
+     (email HTML, single-colour print, monochrome favicons). */
+  --logo: #0d9488;
+  --logo-from: #65a30d;
+  --logo-to: #0d9488;
+  --logo-gradient: linear-gradient(135deg, var(--logo-from), var(--logo-to));
   --logo-foreground: #ffffff;
   --destructive: #dc2626;
   --destructive-subtle: #fef2f2;

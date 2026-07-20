@@ -1,11 +1,11 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 48 48">
+<svg xmlns="http://www.w3.org/2000/svg" width="180" height="180" viewBox="0 0 48 48">
   <defs>
     <linearGradient id="logo" x1="0" y1="0" x2="1" y2="1">
       <stop offset="0" stop-color="#65a30d"/>
       <stop offset="1" stop-color="#0d9488"/>
     </linearGradient>
   </defs>
-  <rect width="48" height="48" rx="11" fill="url(#logo)"/>
-  <!-- Solid D; the F is knocked out as two bars that also read as form rows. -->
+  <!-- No corner radius: iOS masks the tile itself and double-rounding looks off. -->
+  <rect width="48" height="48" fill="url(#logo)"/>
   <path fill="#ffffff" fill-rule="evenodd" d="M11 9h11a15 15 0 0 1 0 30H11a2 2 0 0 1-2-2V11a2 2 0 0 1 2-2Zm5.5 8.5h16a1.75 1.75 0 0 1 0 3.5h-16a1.75 1.75 0 0 1 0-3.5Zm0 9.5h10a1.75 1.75 0 0 1 0 3.5h-10a1.75 1.75 0 0 1 0-3.5Z"/>
 </svg>

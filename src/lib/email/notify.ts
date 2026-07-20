@@ -45,8 +45,8 @@ export async function notifyOwnerOfSubmission(
     : null;
   const title = escapeHtml(form.title);
   const footer = submissionUrl
-    ? `You can <a href="${submissionUrl}" style="color:#ea580c;font-weight:600;text-decoration:underline">view this response</a> or <a href="${submissionsUrl}" style="color:#ea580c;font-weight:600;text-decoration:underline">view all responses</a>.`
-    : `You can <a href="${submissionsUrl}" style="color:#ea580c;font-weight:600;text-decoration:underline">view all responses</a> in your dashboard.`;
+    ? `You can <a href="${submissionUrl}" style="color:#0d9488;font-weight:600;text-decoration:underline">view this response</a> or <a href="${submissionsUrl}" style="color:#0d9488;font-weight:600;text-decoration:underline">view all responses</a>.`
+    : `You can <a href="${submissionsUrl}" style="color:#0d9488;font-weight:600;text-decoration:underline">view all responses</a> in your dashboard.`;
 
   const html = `
 <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#f4f5fb;padding:24px 0;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',system-ui,sans-serif">
@@ -54,11 +54,18 @@ export async function notifyOwnerOfSubmission(
     <table role="presentation" width="600" cellpadding="0" cellspacing="0" style="width:100%;max-width:600px">
       <tr><td align="center" style="padding:8px 0 24px">
         <table role="presentation" cellpadding="0" cellspacing="0"><tr>
-          <td style="background:#ea580c;border-radius:8px;width:32px;height:32px;text-align:center;color:#fff;font-size:19px;font-weight:700;line-height:32px">&#10003;</td>
+          <!-- Hosted PNG, not inline SVG (Gmail strips it) and not a CSS
+               gradient (Outlook drops it). The td keeps a flat --logo teal
+               background so a blocked image degrades to a teal tile rather
+               than a broken-image icon. Served at 96px for retina, shown at 32.
+               alt is empty on purpose: the wordmark beside it already says it. -->
+          <td style="background:#0d9488;border-radius:8px;width:32px;height:32px;line-height:0;font-size:0">
+            <img src="${SITE_URL}/email-logo.png" width="32" height="32" alt="" style="display:block;width:32px;height:32px;border:0;border-radius:8px">
+          </td>
           <td style="padding-left:10px;font-size:22px;font-weight:700;color:#1e1b4b;letter-spacing:-.4px">deoochform</td>
         </tr></table>
       </td></tr>
-      <tr><td style="background:#ea580c;height:6px;line-height:6px;font-size:0;border-radius:4px 4px 0 0">&nbsp;</td></tr>
+      <tr><td style="background:#0d9488;height:6px;line-height:6px;font-size:0;border-radius:4px 4px 0 0">&nbsp;</td></tr>
       <tr><td style="background:#ffffff;padding:28px 32px 8px">
         <div style="font-size:17px;font-weight:700;color:#1e1b4b;padding-bottom:16px;border-bottom:1px solid #e7e7ef">${title}</div>
       </td></tr>
