@@ -1,4 +1,25 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Deooch Forms
+
+**Build a form by describing it. Share a link. Watch the responses land.**
+
+Deooch Forms ([forms.deooch.com](https://forms.deooch.com)) is a form builder with an
+MCP server bolted on. You can drag fields around in the visual studio like any other
+form tool — or skip that entirely and ask Claude, ChatGPT, or any MCP-capable assistant
+to build the form for you, then read the responses back the same way.
+
+Respondents never sign in. They open a public `/f/<slug>` link, fill it in, and submit.
+
+## What it does
+
+- **Form studio** — 13 field types, sections, validation, required fields, live preview.
+- **Public forms** — every form gets a shareable `/f/<slug>` link. No account needed to answer.
+- **Submissions** — responses appear in the dashboard as they arrive, exportable to CSV/XLSX.
+- **Email notifications** — get pinged when someone submits.
+- **MCP server** — six tools (`create_form`, `update_form`, `get_form`, `list_forms`,
+  `list_submissions`, `get_submission`) so an AI assistant can do all of the above for you.
+  Published to the MCP Registry as `io.github.musaib001/deooch-forms`; setup walkthrough
+  at [/connect](https://forms.deooch.com/connect).
+- **Workspaces** — invite members, share forms, per-role access.
 
 ## Architecture
 
@@ -8,41 +29,82 @@ This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-
 - **Data layer** — Supabase Postgres is the source of truth (forms, fields, tokens, RLS policies).
 - **Respondent flow** — anyone with the link opens the public `/f/[slug]` form (no login) and submits, which writes straight to Supabase.
 - **Back to the creator** — submissions show up live in the dashboard, exportable as CSV/XLSX.
-- **Automation** — an MCP server exposes forms and submissions over API tokens so AI agents can create forms or read responses programmatically.
+- **Automation** — an MCP server exposes forms and submissions over OAuth so AI agents can create forms or read responses programmatically.
 
 Stack: Next.js 16, React 19, TypeScript, Tailwind CSS, Supabase (Postgres + Auth), deployed on Vercel.
 
-## Getting Started
+## Field types
 
-First, run the development server:
+Short text · Long text · Email · Phone · Address · Number · Dropdown ·
+Single choice · Multiple choice · Date · File link · File upload · Section heading
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+## Sample forms
+
+Things people actually build with it. Each one is a prompt you can paste into a
+connected AI assistant — it comes back with a live link.
+
+**Employee onboarding**
+> Create an employee onboarding form with a Personal Information section (full name,
+> email, phone, home address), an Employment section (start date, department dropdown,
+> manager), and a document upload for ID.
+
+Uses: section headings, short text, email, phone, address, date, dropdown, file upload.
+
+**Customer feedback**
+> Create a customer feedback form: how satisfied are you (1–5 single choice), what
+> did you use us for (multiple choice), and a comment box.
+
+Uses: single choice, multiple choice, long text.
+
+**Event registration**
+> Create an event registration form with name, email, which sessions they're attending
+> (multiple choice), dietary requirements (dropdown), and number of guests.
+
+Uses: short text, email, multiple choice, dropdown, number.
+
+**Job application**
+> Create a job application form with name, email, phone, LinkedIn URL, a resume upload,
+> and a "why do you want this role" long answer.
+
+Uses: short text, email, phone, file upload, long text.
+
+**Bug report**
+> Create an internal bug report form: title, severity dropdown, steps to reproduce,
+> expected vs actual behaviour, and a screenshot upload.
+
+Uses: short text, dropdown, long text, file upload.
+
+## Connecting an AI assistant
+
+Add this as a remote MCP connector in your assistant's settings:
+
+```
+https://forms.deooch.com/api/mcp
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+It signs you in through the browser — no token to copy or store — and the connection
+acts as you, with your role and plan. Clients that read the MCP Registry can find it
+by name as `io.github.musaib001/deooch-forms` instead. Full walkthrough, including
+ChatGPT web setup and the errors people actually hit, is at
+[forms.deooch.com/connect](https://forms.deooch.com/connect).
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Development
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+```bash
+npm install
+npm run dev      # http://localhost:3000
+npm test         # vitest
+npm run lint
+```
 
-## Learn More
+### Layout
 
-To learn more about Next.js, take a look at the following resources:
+```
+src/app/            routes — (portal) dashboard, /f/[slug] public forms, /api/mcp
+src/components/     builder/ (form studio), forms/, submissions/, marketing/
+src/lib/            forms/ (schema + validation), mcp/, auth/, email/, export/
+supabase/migrations database schema and RLS policies
+```
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel.
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+Read `AGENTS.md` before writing code — this repo tracks a Next.js version whose
+conventions differ from what most models were trained on.

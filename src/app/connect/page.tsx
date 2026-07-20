@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { getSessionProfile } from "@/lib/auth/session";
 import { SITE_URL, MCP_URL } from "@/lib/site";
+import { CopyButton } from "@/components/CopyButton";
 import { Container } from "@/components/portal/Container";
 import { TopBar } from "@/components/portal/TopBar";
 import { MarketingNav, MarketingFooter } from "@/components/marketing/MarketingNav";
@@ -11,6 +12,9 @@ export const metadata: Metadata = {
   description:
     "Connect any MCP-compatible AI assistant and build forms by describing them.",
 };
+
+// Must match "name" in server.json — the identity we publish to the MCP Registry.
+const REGISTRY_NAME = "io.github.musaib001/deooch-forms";
 
 const TOOLS = [
   ["create_form", "Create a form and get its public link back."],
@@ -117,7 +121,7 @@ export default async function ConnectPage() {
             <p className="mb-3 text-sm text-muted-foreground">
               This is the address your AI assistant connects to:
             </p>
-            <Terminal lines={[{ text: MCP_URL }]} />
+            <Terminal lines={[{ text: MCP_URL }]} copy={MCP_URL} />
           </Step>
 
           <Step n={2} title="Add it as a custom connector">
@@ -197,7 +201,7 @@ export default async function ConnectPage() {
               paste the MCP URL as the server address, and leave authentication
               set to <span className="font-semibold text-foreground">OAuth</span>.
             </p>
-            <Terminal lines={[{ text: MCP_URL }]} />
+            <Terminal lines={[{ text: MCP_URL }]} copy={MCP_URL} />
           </Step>
 
           <Step n={3} title="Connect and sign in">
@@ -216,6 +220,33 @@ export default async function ConnectPage() {
               menu, enable the deoochform connector, then ask it to build a form.
             </p>
           </Step>
+        </section>
+
+        <section className="mb-10">
+          <h2 className="mb-1 text-base font-bold text-foreground">
+            Installing from the MCP Registry
+          </h2>
+          <p className="mb-4 text-sm text-muted-foreground">
+            deoochform is published in the official{" "}
+            <a
+              href="https://github.com/modelcontextprotocol/registry"
+              target="_blank"
+              rel="noreferrer"
+              className="font-semibold text-brand hover:text-brand-hover"
+            >
+              MCP Registry
+            </a>
+            , so clients that browse it can install us by name instead of you
+            pasting a URL. That name is:
+          </p>
+          <Terminal lines={[{ text: REGISTRY_NAME }]} copy={REGISTRY_NAME} />
+          <p className="mt-3 text-sm text-muted-foreground">
+            Search your assistant&apos;s connector or server directory for{" "}
+            <span className="font-semibold text-foreground">deooch</span>. If it
+            doesn&apos;t read the registry yet, add{" "}
+            <span className="font-mono text-xs text-foreground">{MCP_URL}</span>{" "}
+            manually as above — same server, same sign-in.
+          </p>
         </section>
 
         <section className="mb-10">
@@ -363,8 +394,10 @@ function Step({
 // readable, copyable, and correct when the URL or CLI output changes.
 function Terminal({
   lines,
+  copy,
 }: {
   lines: { text: string; prompt?: boolean; tone?: "ok" }[];
+  copy?: string;
 }) {
   return (
     <div className="overflow-hidden rounded-xl border border-slate-700 bg-slate-900">
@@ -373,6 +406,11 @@ function Terminal({
         <span className="h-2.5 w-2.5 rounded-full bg-slate-600" />
         <span className="h-2.5 w-2.5 rounded-full bg-slate-600" />
         <span className="ml-2 text-xs font-medium text-slate-400">Terminal</span>
+        {copy && (
+          <span className="ml-auto -my-1">
+            <CopyButton value={copy} />
+          </span>
+        )}
       </div>
       <pre className="overflow-x-auto px-4 py-3.5 font-mono text-xs leading-relaxed">
         {lines.map((line, i) => (

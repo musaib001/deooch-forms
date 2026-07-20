@@ -10,12 +10,39 @@ function publicUrl(slug: string) {
   return `${process.env.NEXT_PUBLIC_APP_URL}/f/${slug}`;
 }
 
-function textResult(data: unknown) {
-  return { content: [{ type: "text" as const, text: JSON.stringify(data) }] };
+// Success: the JSON goes in structuredContent (what Apps SDK / modern clients
+// read) with a text mirror for clients that only understand content blocks.
+function textResult(data: Record<string, unknown>) {
+  return {
+    content: [{ type: "text" as const, text: JSON.stringify(data) }],
+    structuredContent: data,
+  };
 }
 
+// isError skips output-schema validation, so failures must go through here
+// rather than being returned as a normal { error } payload.
+function errorResult(message: string) {
+  return { content: [{ type: "text" as const, text: message }], isError: true };
+}
+
+const formSummary = {
+  formId: z.string(),
+  slug: z.string(),
+  publicUrl: z.string(),
+};
+
 export function createMcpServer(actor: McpActor) {
-  const server = new McpServer({ name: "deoochform", version: "1.0.0" });
+  const server = new McpServer(
+    { name: "deoochform", version: "1.0.0" },
+    {
+      instructions:
+        "Forms and submissions for the authenticated deoochform workspace. " +
+        "Call list_forms to find a form's id before reading or updating it. " +
+        "update_form replaces whole fields arrays, so read the form first and " +
+        "send the full array back with your edits applied. Share a form using " +
+        "the publicUrl each tool returns.",
+    }
+  );
   const db = createAdminClient();
   // Owner/Member tokens keep full team-wide access (unchanged behavior).
   // Free-tier tokens are scoped to only the forms/submissions they own —
@@ -26,12 +53,15 @@ export function createMcpServer(actor: McpActor) {
   server.registerTool(
     "create_form",
     {
+      title: "Create form",
       description: "Create a new form and return its public link.",
+      annotations: { readOnlyHint: false, destructiveHint: false, idempotentHint: false, openWorldHint: false },
       inputSchema: {
         title: z.string().min(1),
         description: z.string().optional(),
         fields: z.array(fieldSchema).default([]),
       },
+      outputSchema: formSummary,
     },
     async ({ title, description, fields }) => {
       const quota = quotaFor(actor);
@@ -42,9 +72,9 @@ export function createMcpServer(actor: McpActor) {
           .eq("created_by", actor.id)
           .is("deleted_at", null);
         if ((count ?? 0) >= quota.formLimit) {
-          return textResult({
-            error: `Your plan is limited to ${quota.formLimit} forms. Upgrade to create more.`,
-          });
+          return errorResult(
+            `Your plan is limited to ${quota.formLimit} forms. Upgrade to create more.`
+          );
         }
       }
 
@@ -62,7 +92,7 @@ export function createMcpServer(actor: McpActor) {
         .select("id, slug")
         .single();
 
-      if (error) return textResult({ error: error.message });
+      if (error) return errorResult(error.message);
       return textResult({
         formId: data.id,
         slug: data.slug,
@@ -74,7 +104,9 @@ export function createMcpServer(actor: McpActor) {
   server.registerTool(
     "update_form",
     {
+      title: "Update form",
       description: "Update a form's title, description, fields, or status.",
+      annotations: { readOnlyHint: false, destructiveHint: true, idempotentHint: true, openWorldHint: false },
       inputSchema: {
         formId: z.string(),
         title: z.string().min(1).optional(),
@@ -82,6 +114,7 @@ export function createMcpServer(actor: McpActor) {
         fields: z.array(fieldSchema).optional(),
         status: formStatusSchema.optional(),
       },
+      outputSchema: { ...formSummary, updatedAt: z.string() },
     },
     async ({ formId, ...changes }) => {
       let query = db
@@ -92,7 +125,7 @@ export function createMcpServer(actor: McpActor) {
       if (!isTrusted) query = query.eq("created_by", actor.id);
 
       const { data, error } = await query.select("id, slug, updated_at").single();
-      if (error) return textResult({ error: "Form not found." });
+      if (error) return errorResult("Form not found.");
 
       if (changes.fields) {
         await db
@@ -112,15 +145,26 @@ export function createMcpServer(actor: McpActor) {
   server.registerTool(
     "get_form",
     {
+      title: "Get form",
       description: "Get a form's full definition.",
+      annotations: { readOnlyHint: true, destructiveHint: false, idempotentHint: true, openWorldHint: false },
       inputSchema: { formId: z.string() },
+      outputSchema: {
+        ...formSummary,
+        title: z.string(),
+        description: z.string().nullish(),
+        fields: z.array(fieldSchema),
+        status: formStatusSchema,
+        createdAt: z.string(),
+        updatedAt: z.string(),
+      },
     },
     async ({ formId }) => {
       let query = db.from("forms").select("*").eq("id", formId).is("deleted_at", null);
       if (!isTrusted) query = query.eq("created_by", actor.id);
 
       const { data, error } = await query.single();
-      if (error) return textResult({ error: "Form not found." });
+      if (error) return errorResult("Form not found.");
 
       return textResult({
         formId: data.id,
@@ -139,10 +183,23 @@ export function createMcpServer(actor: McpActor) {
   server.registerTool(
     "list_forms",
     {
+      title: "List forms",
       description: "List forms in this workspace.",
+      annotations: { readOnlyHint: true, destructiveHint: false, idempotentHint: true, openWorldHint: false },
       inputSchema: {
         status: formStatusSchema.optional(),
         limit: z.number().int().positive().max(100).default(20),
+      },
+      outputSchema: {
+        forms: z.array(
+          z.object({
+            ...formSummary,
+            title: z.string(),
+            status: formStatusSchema,
+            submissionCount: z.number(),
+            createdAt: z.string(),
+          })
+        ),
       },
     },
     async ({ status, limit }) => {
@@ -156,7 +213,7 @@ export function createMcpServer(actor: McpActor) {
       if (!isTrusted) query = query.eq("created_by", actor.id);
 
       const { data, error } = await query;
-      if (error) return textResult({ error: error.message });
+      if (error) return errorResult(error.message);
 
       return textResult({
         forms: (data ?? []).map((f) => ({
@@ -175,10 +232,21 @@ export function createMcpServer(actor: McpActor) {
   server.registerTool(
     "list_submissions",
     {
+      title: "List submissions",
       description: "List submissions for a form.",
+      annotations: { readOnlyHint: true, destructiveHint: false, idempotentHint: true, openWorldHint: false },
       inputSchema: {
         formId: z.string(),
         limit: z.number().int().positive().max(200).default(50),
+      },
+      outputSchema: {
+        submissions: z.array(
+          z.object({
+            submissionId: z.string(),
+            answers: z.record(z.string(), z.unknown()),
+            submittedAt: z.string(),
+          })
+        ),
       },
     },
     async ({ formId, limit }) => {
@@ -191,7 +259,7 @@ export function createMcpServer(actor: McpActor) {
       if (!isTrusted) query = query.eq("forms.created_by", actor.id);
 
       const { data, error } = await query;
-      if (error) return textResult({ error: error.message });
+      if (error) return errorResult(error.message);
 
       return textResult({
         submissions: (data ?? []).map((s) => ({
@@ -206,8 +274,16 @@ export function createMcpServer(actor: McpActor) {
   server.registerTool(
     "get_submission",
     {
+      title: "Get submission",
       description: "Get a single submission by id.",
+      annotations: { readOnlyHint: true, destructiveHint: false, idempotentHint: true, openWorldHint: false },
       inputSchema: { submissionId: z.string() },
+      outputSchema: {
+        submissionId: z.string(),
+        formId: z.string(),
+        answers: z.record(z.string(), z.unknown()),
+        submittedAt: z.string(),
+      },
     },
     async ({ submissionId }) => {
       let query = db
@@ -217,7 +293,7 @@ export function createMcpServer(actor: McpActor) {
       if (!isTrusted) query = query.eq("forms.created_by", actor.id);
 
       const { data, error } = await query.single();
-      if (error) return textResult({ error: "Submission not found." });
+      if (error) return errorResult("Submission not found.");
 
       return textResult({
         submissionId: data.id,

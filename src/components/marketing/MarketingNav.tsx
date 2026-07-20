@@ -57,6 +57,12 @@ export function MarketingFooter() {
           <a href="mailto:help@deooch.com" className="hover:text-foreground">
             Support
           </a>
+          <Link href="/privacy" className="hover:text-foreground">
+            Privacy
+          </Link>
+          <Link href="/terms" className="hover:text-foreground">
+            Terms
+          </Link>
           <Link href="/login" className="hover:text-foreground">
             Login
           </Link>
