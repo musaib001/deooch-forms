@@ -1,62 +1,194 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { getSessionProfile } from "@/lib/auth/session";
+import { Container } from "@/components/portal/Container";
+import { TopBar } from "@/components/portal/TopBar";
 import { MarketingNav, MarketingFooter } from "@/components/marketing/MarketingNav";
 
 export const metadata: Metadata = {
   title: "Support",
-  description: "Get help with deoochform — your account, forms, billing, or the MCP connector.",
+  description:
+    "Get help with deoochform — sign-in problems, forms, responses, billing, and the MCP connector.",
   alternates: { canonical: "/support" },
 };
 
-export default function SupportPage() {
+const FAQS = [
+  {
+    q: "I can't sign in — what do I try first?",
+    a: "Check you're using the same method you signed up with: email and password, or Continue with Google. If you first signed up through Google, use that button rather than a password. If the password is the problem, reset it from the forgot-password page.",
+  },
+  {
+    q: "How do I reset my password?",
+    a: "Use the forgot-password link on the login page. We email you a reset link — check spam if it doesn't arrive within a couple of minutes, and make sure you requested it for the address you actually signed up with.",
+  },
+  {
+    q: "Do I need an account to fill in a form?",
+    a: "No. Public form links (the /f/... URLs) are open to anyone — respondents never sign in or create an account. You only need an account to build and manage forms.",
+  },
+  {
+    q: "How do I share a form?",
+    a: "Open the form and copy its public link (the /f/... URL). Anyone with the link can respond — no account needed.",
+  },
+  {
+    q: "How do I export responses?",
+    a: "Open a form's Responses page and click Download Excel. You get every submission with one column per field.",
+  },
+  {
+    q: "What are the free plan limits?",
+    a: "Free accounts get 2 forms and 50 total submissions. Paid plans raise these limits — see the pricing page.",
+  },
+  {
+    q: "How do I build forms with AI?",
+    a: "Connect any MCP-compatible AI assistant to your account, then just describe the form you want and it appears in your dashboard. The MCP connectors page walks through setup, troubleshooting, and common errors.",
+  },
+  {
+    q: "How do I invite teammates?",
+    a: "Workspace owners can invite members from the Members page. Invited members can build forms and view responses.",
+  },
+  {
+    q: "How do I upgrade or change my plan?",
+    a: "Visit the pricing page and pick a plan. Billing is handled per workspace; contact us for Enterprise.",
+  },
+];
+
+// Public on purpose: people need help pages before they can sign in, and the
+// ChatGPT app listing links here. Signed-in visitors keep the portal chrome.
+export default async function SupportPage() {
+  const profile = await getSessionProfile();
+
   return (
     <div className="flex min-h-screen flex-col bg-background">
-      <MarketingNav />
+      {profile ? (
+        <TopBar
+          email={profile.email}
+          fullName={profile.full_name}
+          role={profile.role}
+          plan={profile.plan}
+        />
+      ) : (
+        <MarketingNav />
+      )}
+
       <main className="flex-1">
-        <article className="mx-auto max-w-3xl px-6 py-16 text-sm leading-relaxed text-muted-foreground [&_h2]:mt-10 [&_h2]:mb-3 [&_h2]:text-base [&_h2]:font-bold [&_h2]:text-foreground [&_li]:mt-1.5 [&_p]:mt-3 [&_ul]:mt-3 [&_ul]:list-disc [&_ul]:pl-5">
-          <h1 className="text-4xl font-extrabold tracking-tight text-foreground">
-            Support
-          </h1>
-          <p className="mt-2">
-            Stuck on something? Email us and we&rsquo;ll get back to you, usually within
-            one business day.
-          </p>
+        <Container>
+          <div className="mx-auto max-w-3xl">
+      <div className="mb-8">
+        <h1 className="text-2xl font-bold tracking-tight text-foreground">Support</h1>
+        <p className="mt-1 text-sm text-muted-foreground">
+          Get help, browse common questions, or talk to us directly.
+        </p>
+      </div>
 
-          <a
-            href="mailto:help@deooch.com"
-            className="mt-6 inline-flex h-10 items-center rounded-lg bg-brand px-5 text-sm font-semibold text-brand-foreground hover:bg-brand-hover"
-          >
-            Email help@deooch.com
-          </a>
-
-          <h2>MCP connector issues</h2>
-          <p>
-            Connection errors, sign-in problems, and tool errors from AI assistants are
-            covered on the{" "}
-            <Link href="/connect" className="font-semibold text-brand hover:text-brand-hover">
-              MCP connectors page
-            </Link>{" "}
-            — check the error table and FAQ there first, it covers the common cases
-            faster than an email round-trip.
+      <div className="mb-8 grid gap-4 sm:grid-cols-2">
+        <Link
+          href="/connect"
+          className="group rounded-2xl border border-border bg-card p-5 transition-colors hover:border-brand/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+        >
+          <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-brand-subtle text-brand">
+            <PlugIcon />
+          </span>
+          <p className="mt-3 text-sm font-semibold text-foreground group-hover:text-brand">
+            MCP connectors
           </p>
-
-          <h2>Account & billing</h2>
-          <p>
-            Plan changes, invoices, and cancellations: email us from the address on your
-            account and include your workspace name so we can find you quickly.
+          <p className="mt-0.5 text-sm text-muted-foreground">
+            Set up the MCP connection and build forms by asking.
           </p>
-
-          <h2>Data & privacy requests</h2>
-          <p>
-            To export or delete your data, see the{" "}
-            <Link href="/privacy" className="font-semibold text-brand hover:text-brand-hover">
-              Privacy Policy
-            </Link>{" "}
-            for what we hold and how to request deletion.
+        </Link>
+        <a
+          href="mailto:help@deooch.com"
+          className="group rounded-2xl border border-border bg-card p-5 transition-colors hover:border-brand/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+        >
+          <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-brand-subtle text-brand">
+            <MailIcon />
+          </span>
+          <p className="mt-3 text-sm font-semibold text-foreground group-hover:text-brand">
+            Email support
           </p>
-        </article>
+          <p className="mt-0.5 text-sm text-muted-foreground">
+            help@deooch.com — we reply within one business day.
+          </p>
+        </a>
+        <Link
+          href="/pricing"
+          className="group rounded-2xl border border-border bg-card p-5 transition-colors hover:border-brand/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+        >
+          <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-brand-subtle text-brand">
+            <TagIcon />
+          </span>
+          <p className="mt-3 text-sm font-semibold text-foreground group-hover:text-brand">
+            Plans &amp; billing
+          </p>
+          <p className="mt-0.5 text-sm text-muted-foreground">
+            Compare plans, upgrade, or get an Enterprise quote.
+          </p>
+        </Link>
+      </div>
+
+      <h2 className="mb-3 text-base font-bold text-foreground">
+        Frequently asked questions
+      </h2>
+      <div className="divide-y divide-border overflow-hidden rounded-2xl border border-border bg-card">
+        {FAQS.map(({ q, a }) => (
+          <details key={q} className="group">
+            <summary className="flex cursor-pointer list-none items-center justify-between gap-3 px-5 py-4 text-sm font-semibold text-foreground transition-colors hover:bg-muted/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring [&::-webkit-details-marker]:hidden">
+              {q}
+              <span aria-hidden className="text-muted-foreground transition-transform duration-150 group-open:rotate-180">
+                <ChevronDownIcon />
+              </span>
+            </summary>
+            <p className="px-5 pb-4 text-sm leading-relaxed text-muted-foreground">{a}</p>
+          </details>
+        ))}
+      </div>
+
+      <p className="mt-8 text-center text-sm text-muted-foreground">
+        Still stuck?{" "}
+        <a
+          href="mailto:help@deooch.com"
+          className="font-semibold text-brand hover:text-brand-hover"
+        >
+          Email us
+        </a>{" "}
+          and include your form link so we can help faster.
+        </p>
+          </div>
+        </Container>
       </main>
-      <MarketingFooter />
+      {!profile && <MarketingFooter />}
     </div>
+  );
+}
+
+function PlugIcon() {
+  return (
+    <svg className="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+      <path d="M9 2v6M15 2v6M6 8h12v3a6 6 0 0 1-12 0V8ZM12 17v5" />
+    </svg>
+  );
+}
+
+function MailIcon() {
+  return (
+    <svg className="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} aria-hidden>
+      <rect x="2" y="4" width="20" height="16" rx="2" />
+      <path d="m22 7-10 6L2 7" />
+    </svg>
+  );
+}
+
+function TagIcon() {
+  return (
+    <svg className="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+      <path d="M12 2H2v10l9.3 9.3a2 2 0 0 0 2.8 0l7.2-7.2a2 2 0 0 0 0-2.8L12 2Z" />
+      <circle cx="7.5" cy="7.5" r="1" />
+    </svg>
+  );
+}
+
+function ChevronDownIcon() {
+  return (
+    <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+      <path d="m6 9 6 6 6-6" />
+    </svg>
   );
 }
