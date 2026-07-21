@@ -128,6 +128,7 @@ export function Cell({
       );
     case "file":
     case "upload":
+    case "signature":
       return (
         <a
           href={text}
@@ -135,7 +136,11 @@ export function Cell({
           rel="noopener noreferrer"
           className={"block " + linkClass}
         >
-          {field.type === "upload" ? "Download file" : text}
+          {field.type === "file"
+            ? text
+            : field.type === "signature"
+              ? "View signature"
+              : "Download file"}
         </a>
       );
     case "number":
@@ -174,6 +179,7 @@ export function FieldTypeIcon({ type }: { type: FieldType }) {
     date: "▦",
     file: "🔗",
     upload: "📎",
+    signature: "✍",
     heading: "H",
   };
   return (

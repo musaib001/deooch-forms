@@ -55,6 +55,8 @@ export async function POST(request: Request) {
       title: body.data.title,
       description: body.data.description,
       fields: body.data.fields,
+      theme: body.data.theme,
+      cover_url: body.data.cover_url,
       created_by: profile.id,
       updated_by: profile.id,
     })

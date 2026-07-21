@@ -6,7 +6,7 @@ import { NextResponse, type NextRequest } from "next/server";
 // session, the .well-known documents are public metadata, and /authorize does
 // its own auth check (redirecting to /login?next=... so the user lands back
 // here post-login instead of on a bare /login from this gate).
-const PUBLIC_PREFIXES = ["/auth/", "/f/", "/api/mcp", "/.well-known/"];
+const PUBLIC_PREFIXES = ["/auth/", "/f/", "/api/mcp", "/.well-known/", "/templates/"];
 // /pricing and /connect are marketing pages: reachable signed-out, and they
 // render their own nav rather than the portal's.
 const PUBLIC_PATHS = [
@@ -15,6 +15,7 @@ const PUBLIC_PATHS = [
   "/signup",
   "/pricing",
   "/connect",
+  "/templates",
   "/privacy",
   "/terms",
   "/authorize",

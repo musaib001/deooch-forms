@@ -13,6 +13,12 @@ export function MarketingNav() {
         </Link>
         <div className="flex items-center gap-2 sm:gap-4">
           <Link
+            href="/templates"
+            className="px-2 text-sm font-medium text-muted-foreground hover:text-foreground"
+          >
+            Templates
+          </Link>
+          <Link
             href="/connect"
             className="hidden px-2 text-sm font-medium text-muted-foreground hover:text-foreground sm:block"
           >
@@ -48,6 +54,9 @@ export function MarketingFooter() {
       <div className="mx-auto flex max-w-6xl flex-col items-center justify-between gap-3 px-6 text-sm text-muted-foreground sm:flex-row">
         <p>© {new Date().getUTCFullYear()} deoochform</p>
         <div className="flex flex-wrap justify-center gap-5">
+          <Link href="/templates" className="hover:text-foreground">
+            Templates
+          </Link>
           <Link href="/connect" className="hover:text-foreground">
             MCP connectors
           </Link>

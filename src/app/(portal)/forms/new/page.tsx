@@ -3,10 +3,16 @@ import { FormStudio } from "@/components/builder/FormStudio";
 import { getSessionProfile } from "@/lib/auth/session";
 import { createClient } from "@/lib/supabase/server";
 import { quotaFor } from "@/lib/plans";
+import { templateBySlug } from "@/lib/forms/templates";
 import { buttonPrimaryClass } from "@/lib/ui";
 import { Container } from "@/components/portal/Container";
 
-export default async function NewFormPage() {
+export default async function NewFormPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ template?: string }>;
+}) {
+  const { template: templateSlug } = await searchParams;
   const profile = await getSessionProfile();
   const quota = profile && quotaFor(profile);
 
@@ -40,7 +46,8 @@ export default async function NewFormPage() {
 
   return (
     <Container>
-      <FormStudio />
+      {/* An unknown ?template= slug just falls through to a blank form. */}
+      <FormStudio template={templateSlug ? templateBySlug(templateSlug) : undefined} />
     </Container>
   );
 }

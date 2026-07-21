@@ -13,7 +13,7 @@ export default async function PublicFormPage({
   const admin = createAdminClient();
   const { data: form } = await admin
     .from("forms")
-    .select("id, slug, title, description, fields, status")
+    .select("id, slug, title, description, fields, status, theme, cover_url")
     .eq("slug", slug)
     // A trashed form must stop serving immediately; the admin client bypasses
     // RLS, so this filter is the only thing enforcing it here.
@@ -33,6 +33,8 @@ export default async function PublicFormPage({
       title={form.title}
       description={form.description}
       fields={form.fields}
+      theme={form.theme}
+      coverUrl={form.cover_url}
     />
   );
 }

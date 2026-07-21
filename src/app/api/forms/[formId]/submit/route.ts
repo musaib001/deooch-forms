@@ -4,9 +4,11 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import type { Field } from "@/lib/forms/schema";
 import { quotaFor } from "@/lib/plans";
 import { notifyOwnerOfSubmission } from "@/lib/email/notify";
+import { verifyCaptcha } from "@/lib/captcha";
 
 const submitSchema = z.object({
   answers: z.record(z.string(), z.union([z.string(), z.array(z.string())])),
+  captchaToken: z.string().optional(),
 });
 
 type Params = { params: Promise<{ formId: string }> };
@@ -23,6 +25,11 @@ export async function POST(request: Request, { params }: Params) {
   const body = submitSchema.safeParse(await request.json());
   if (!body.success) {
     return NextResponse.json({ error: body.error.flatten() }, { status: 400 });
+  }
+
+  const meta = clientMeta(request);
+  if (!(await verifyCaptcha(body.data.captchaToken, meta.ip))) {
+    return NextResponse.json({ error: "Captcha verification failed" }, { status: 403 });
   }
 
   const admin = createAdminClient();
@@ -56,7 +63,7 @@ export async function POST(request: Request, { params }: Params) {
     .insert({
       form_id: formId,
       answers: body.data.answers,
-      respondent_meta: clientMeta(request),
+      respondent_meta: meta,
     })
     .select("id")
     .single();

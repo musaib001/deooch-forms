@@ -8,11 +8,15 @@ export function FormPreviewModal({
   title,
   description,
   fields,
+  theme,
+  coverUrl,
   onClose,
 }: {
   title: string;
   description: string;
   fields: Field[];
+  theme?: string | null;
+  coverUrl?: string | null;
   onClose: () => void;
 }) {
   useEffect(() => {
@@ -56,6 +60,8 @@ export function FormPreviewModal({
           title={title || "Untitled form"}
           description={description || null}
           fields={cleaned}
+          theme={theme}
+          coverUrl={coverUrl}
         />
       </div>
     </div>

@@ -46,6 +46,8 @@ import {
   type FieldType,
   type FormStatus,
 } from "@/lib/forms/schema";
+import type { FormTemplate } from "@/lib/forms/templates";
+import { DEFAULT_THEME } from "@/lib/forms/themes";
 import { FormPreviewModal } from "@/components/forms/FormPreviewModal";
 import { LIBRARY, ITEM_BY_TYPE, type LibraryItem } from "./library";
 import { Inspector } from "./Inspector";
@@ -55,6 +57,8 @@ type Doc = {
   description: string;
   status: FormStatus;
   fields: Field[];
+  theme: string;
+  cover_url: string | null;
 };
 
 export type ExistingForm = {
@@ -64,6 +68,8 @@ export type ExistingForm = {
   description: string | null;
   fields: Field[];
   status: FormStatus;
+  theme: string | null;
+  cover_url: string | null;
 };
 
 type SaveState = "saved" | "saving" | "dirty" | "error";
@@ -73,12 +79,22 @@ type Device = keyof typeof DEVICE_WIDTHS;
 
 const RECENT_KEY = "deooch-recent-fields";
 
-export function FormStudio({ existing }: { existing?: ExistingForm }) {
+// `template` seeds a brand-new form's content without giving it an id, so the
+// first edit still POSTs a create rather than PUTting a form that doesn't exist.
+export function FormStudio({
+  existing,
+  template,
+}: {
+  existing?: ExistingForm;
+  template?: FormTemplate;
+}) {
   const [doc, setDoc] = useState<Doc>({
-    title: existing?.title ?? "Untitled form",
-    description: existing?.description ?? "",
+    title: existing?.title ?? template?.name ?? "Untitled form",
+    description: existing?.description ?? template?.description ?? "",
     status: existing?.status ?? "draft",
-    fields: existing?.fields ?? [],
+    fields: existing?.fields ?? template?.fields ?? [],
+    theme: existing?.theme ?? template?.theme ?? DEFAULT_THEME.slug,
+    cover_url: existing?.cover_url ?? null,
   });
   const [past, setPast] = useState<Doc[]>([]);
   const [future, setFuture] = useState<Doc[]>([]);
@@ -154,6 +170,8 @@ export function FormStudio({ existing }: { existing?: ExistingForm }) {
       title: snapshot.title,
       description: snapshot.description,
       status: snapshot.status,
+      theme: snapshot.theme,
+      cover_url: snapshot.cover_url,
       fields: snapshot.fields.map((f) =>
         f.options ? { ...f, options: f.options.map((o) => o.trim()).filter(Boolean) } : f
       ),
@@ -165,7 +183,15 @@ export function FormStudio({ existing }: { existing?: ExistingForm }) {
         method: id ? "PATCH" : "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(
-          id ? body : { title: body.title, description: body.description, fields: body.fields }
+          id
+            ? body
+            : {
+                title: body.title,
+                description: body.description,
+                fields: body.fields,
+                theme: body.theme,
+                cover_url: body.cover_url,
+              }
         ),
       });
       if (!res.ok) throw new Error();
@@ -519,6 +545,8 @@ export function FormStudio({ existing }: { existing?: ExistingForm }) {
           title={doc.title}
           description={doc.description}
           fields={doc.fields}
+          theme={doc.theme}
+          coverUrl={doc.cover_url}
           onClose={() => setShowPreview(false)}
         />
       )}
@@ -1090,6 +1118,12 @@ function FieldBody({
       return (
         <div className="pointer-events-none flex h-14 w-full items-center justify-center rounded-lg border border-dashed border-input bg-background text-sm text-muted-foreground/60">
           Respondent uploads a file (image or PDF, up to 5&nbsp;MB)
+        </div>
+      );
+    case "signature":
+      return (
+        <div className="pointer-events-none flex h-14 w-full items-center justify-center rounded-lg border border-dashed border-input bg-background text-sm text-muted-foreground/60">
+          Respondent signs here
         </div>
       );
     case "select":

@@ -1,14 +1,22 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useRef, useState } from "react";
+import Script from "next/script";
+import { useEffect, useRef, useState } from "react";
 import type { Field } from "@/lib/forms/schema";
 import { isInputField } from "@/lib/forms/schema";
 import { validateField, type FieldValue } from "@/lib/forms/validation";
 import { ADDRESS_PARTS, addressParts } from "@/lib/forms/address";
+import { themeStyle } from "@/lib/forms/themes";
 import { formatPhone, helpTextClass, inputClass, labelClass } from "@/lib/ui";
 
 type Value = FieldValue;
+
+declare global {
+  interface Window {
+    turnstile?: { reset: (widget?: string) => void };
+  }
+}
 
 export function PublicFormRenderer({
   formId,
@@ -16,6 +24,8 @@ export function PublicFormRenderer({
   title,
   description,
   fields,
+  theme,
+  coverUrl,
   preview = false,
 }: {
   formId: string;
@@ -23,6 +33,8 @@ export function PublicFormRenderer({
   title: string;
   description: string | null;
   fields: Field[];
+  theme?: string | null;
+  coverUrl?: string | null;
   preview?: boolean;
 }) {
   const router = useRouter();
@@ -32,6 +44,12 @@ export function PublicFormRenderer({
   const [formError, setFormError] = useState<string | null>(null);
   const [previewValid, setPreviewValid] = useState(false);
   const fieldRefs = useRef<Record<string, HTMLElement | null>>({});
+
+  // Turnstile renders itself into any .cf-turnstile inside the form and injects
+  // a hidden cf-turnstile-response input, which we read at submit time. Preview
+  // never posts, so it never needs the challenge.
+  const siteKey = process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY;
+  const captcha = !preview && !!siteKey;
 
   const orderedFields = [...fields]
     .sort((a, b) => a.order - b.order)
@@ -69,6 +87,9 @@ export function PublicFormRenderer({
 
   async function submit(e: React.FormEvent) {
     e.preventDefault();
+    // Captured before the first await: currentTarget is nulled out once React
+    // recycles the synthetic event.
+    const formEl = e.currentTarget as HTMLFormElement;
     setFormError(null);
     setPreviewValid(false);
 
@@ -95,16 +116,33 @@ export function PublicFormRenderer({
       return;
     }
 
+    let captchaToken: string | undefined;
+    if (captcha) {
+      captchaToken =
+        formEl.querySelector<HTMLInputElement>('[name="cf-turnstile-response"]')?.value ||
+        undefined;
+      if (!captchaToken) {
+        setFormError("Please complete the anti-spam check above.");
+        return;
+      }
+    }
+
     setSubmitting(true);
     const res = await fetch(`/api/forms/${formId}/submit`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ answers: values }),
+      body: JSON.stringify({ answers: values, captchaToken }),
     });
     setSubmitting(false);
 
     if (!res.ok) {
-      setFormError("Something went wrong submitting the form. Please try again.");
+      // Turnstile tokens are single-use, so a retry needs a fresh challenge.
+      if (captcha) window.turnstile?.reset();
+      setFormError(
+        res.status === 403
+          ? "The anti-spam check failed. Please try again."
+          : "Something went wrong submitting the form. Please try again."
+      );
       return;
     }
 
@@ -112,14 +150,28 @@ export function PublicFormRenderer({
   }
 
   return (
-    <div className="mx-auto w-full max-w-2xl px-4 py-10 sm:py-16">
+    // The theme is scoped to this subtree, so the same renderer themes itself
+    // on the public page, in the builder preview, and on a template page.
+    <div className="w-full" style={themeStyle(theme)}>
+      <div className="mx-auto w-full max-w-2xl px-4 py-10 sm:py-16">
       <form
         onSubmit={submit}
         noValidate
         aria-busy={submitting}
         className="overflow-hidden rounded-2xl border border-border bg-card shadow-sm"
       >
-        <div aria-hidden className="h-1.5 bg-brand" />
+        {coverUrl ? (
+          // Plain <img>: the URL is user-supplied at runtime, so next/image
+          // would need every possible host allow-listed in next.config.
+          // eslint-disable-next-line @next/next/no-img-element
+          <img
+            src={coverUrl}
+            alt=""
+            className="h-40 w-full object-cover sm:h-56"
+          />
+        ) : (
+          <div aria-hidden className="h-1.5 bg-brand" />
+        )}
         <header className="border-b border-border bg-brand-subtle px-6 py-8 text-center sm:px-10">
           <h1 className="text-2xl font-bold tracking-tight text-foreground sm:text-3xl">
             {title}
@@ -157,6 +209,16 @@ export function PublicFormRenderer({
             )
           )}
 
+          {captcha && (
+            <>
+              <Script
+                src="https://challenges.cloudflare.com/turnstile/v0/api.js"
+                strategy="lazyOnload"
+              />
+              <div className="cf-turnstile self-center" data-sitekey={siteKey} />
+            </>
+          )}
+
           {formError && (
             <p
               role="alert"
@@ -189,9 +251,15 @@ export function PublicFormRenderer({
         </div>
       </form>
 
-      <p className="mt-6 text-center text-xs text-muted-foreground">
+      {/* Sits on the page surround, not the card, so it needs the theme's
+          on-page text colour rather than --muted-foreground. */}
+      <p
+        className="mt-6 text-center text-xs"
+        style={{ color: "var(--page-foreground)" }}
+      >
         Powered by deoochform
       </p>
+      </div>
     </div>
   );
 }
@@ -351,6 +419,167 @@ function UploadControl({
             ? `✓ ${fileName ?? "File attached"}`
             : "Choose a file (image or PDF, up to 5 MB)"}
       </label>
+      {error && <p className="text-[13px] font-medium text-destructive">{error}</p>}
+    </div>
+  );
+}
+
+// Internal buffer is fixed and the element is CSS-scaled, so pointer coords are
+// converted rather than resized on the fly.
+const SIG_W = 600;
+const SIG_H = 180;
+
+function SignatureControl({
+  formId,
+  preview,
+  value,
+  invalid,
+  describedBy,
+  setValue,
+  onBlur,
+  registerRef,
+}: {
+  formId: string;
+  preview: boolean;
+  value: string | undefined;
+  invalid: boolean;
+  describedBy?: string;
+  setValue: (value: Value) => void;
+  onBlur: () => void;
+  registerRef: (el: HTMLElement | null) => void;
+}) {
+  const canvasRef = useRef<HTMLCanvasElement | null>(null);
+  const drawing = useRef(false);
+  const saveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    const ctx = canvasRef.current?.getContext("2d");
+    if (!ctx) return;
+    ctx.lineWidth = 2.5;
+    ctx.lineCap = "round";
+    ctx.lineJoin = "round";
+    ctx.strokeStyle = "#111827";
+    return () => {
+      if (saveTimer.current) clearTimeout(saveTimer.current);
+    };
+  }, []);
+
+  function point(e: React.PointerEvent<HTMLCanvasElement>) {
+    const canvas = e.currentTarget;
+    const rect = canvas.getBoundingClientRect();
+    return {
+      x: (e.clientX - rect.left) * (canvas.width / rect.width),
+      y: (e.clientY - rect.top) * (canvas.height / rect.height),
+    };
+  }
+
+  function start(e: React.PointerEvent<HTMLCanvasElement>) {
+    e.preventDefault();
+    e.currentTarget.setPointerCapture(e.pointerId);
+    const ctx = e.currentTarget.getContext("2d");
+    if (!ctx) return;
+    const p = point(e);
+    ctx.beginPath();
+    ctx.moveTo(p.x, p.y);
+    // A tap with no drag should still leave a mark.
+    ctx.lineTo(p.x, p.y);
+    ctx.stroke();
+    drawing.current = true;
+  }
+
+  function move(e: React.PointerEvent<HTMLCanvasElement>) {
+    if (!drawing.current) return;
+    const ctx = e.currentTarget.getContext("2d");
+    if (!ctx) return;
+    const p = point(e);
+    ctx.lineTo(p.x, p.y);
+    ctx.stroke();
+  }
+
+  function end() {
+    if (!drawing.current) return;
+    drawing.current = false;
+    // Debounced so a multi-stroke signature uploads once at the end instead of
+    // leaving an orphaned object per stroke.
+    if (saveTimer.current) clearTimeout(saveTimer.current);
+    saveTimer.current = setTimeout(save, 700);
+  }
+
+  function clear() {
+    const canvas = canvasRef.current;
+    canvas?.getContext("2d")?.clearRect(0, 0, canvas.width, canvas.height);
+    if (saveTimer.current) clearTimeout(saveTimer.current);
+    setError(null);
+    setValue("");
+  }
+
+  function save() {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+
+    // Preview never persists, and the upload endpoint only accepts published
+    // forms, so mark the field satisfied without touching the network.
+    if (preview) return setValue("preview://signature.png");
+
+    setSaving(true);
+    canvas.toBlob(async (blob) => {
+      try {
+        if (!blob) throw new Error("empty canvas");
+        const body = new FormData();
+        body.append("file", new File([blob], "signature.png", { type: "image/png" }));
+        const res = await fetch(`/api/forms/${formId}/upload`, { method: "POST", body });
+        const json = await res.json().catch(() => ({}));
+        if (!res.ok) throw new Error(json.error ?? "upload failed");
+        setValue(json.url as string);
+        setError(null);
+      } catch {
+        setError("Could not save the signature. Draw again to retry.");
+        setValue("");
+      } finally {
+        setSaving(false);
+        onBlur();
+      }
+    }, "image/png");
+  }
+
+  return (
+    <div className="flex flex-col gap-2">
+      <canvas
+        ref={(el) => {
+          canvasRef.current = el;
+          registerRef(el);
+        }}
+        width={SIG_W}
+        height={SIG_H}
+        tabIndex={0}
+        // ponytail: pointer-only, as a signature pad is. If a keyboard-accessible
+        // alternative is needed, add a "type your full name" fallback beside it.
+        aria-label="Signature pad — draw your signature"
+        aria-invalid={invalid || undefined}
+        aria-describedby={describedBy}
+        onPointerDown={start}
+        onPointerMove={move}
+        onPointerUp={end}
+        onPointerCancel={end}
+        className={
+          "h-40 w-full touch-none rounded-lg border bg-background " +
+          (invalid ? "border-destructive" : "border-input")
+        }
+      />
+      <div className="flex items-center gap-3 text-[13px]">
+        <button
+          type="button"
+          onClick={clear}
+          className="rounded-md px-2 py-1 font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+        >
+          Clear
+        </button>
+        <span className="text-muted-foreground">
+          {saving ? "Saving…" : value ? "✓ Signature captured" : "Sign above"}
+        </span>
+      </div>
       {error && <p className="text-[13px] font-medium text-destructive">{error}</p>}
     </div>
   );
@@ -524,6 +753,19 @@ function FieldControl({
           value={(value as string) ?? ""}
           onChange={(e) => setValue(e.target.value)}
           className={inputClass}
+        />
+      );
+    case "signature":
+      return (
+        <SignatureControl
+          formId={formId}
+          preview={preview}
+          value={value as string | undefined}
+          invalid={invalid}
+          describedBy={describedBy}
+          setValue={setValue}
+          onBlur={onBlur}
+          registerRef={registerRef}
         />
       );
     case "upload":

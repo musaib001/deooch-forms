@@ -15,6 +15,7 @@ export const FIELD_TYPES = [
   "date",
   "file",
   "upload",
+  "signature",
   "heading",
 ] as const;
 
@@ -37,6 +38,7 @@ export const FIELD_TYPE_LABELS: Record<FieldType, string> = {
   date: "Date",
   file: "File link",
   upload: "File upload",
+  signature: "Signature",
   heading: "Section heading",
 };
 
@@ -60,6 +62,10 @@ export const createFormSchema = z.object({
   title: z.string().min(1),
   description: z.string().optional(),
   fields: z.array(fieldSchema).default([]),
+  theme: z.string().optional(),
+  // snake_case to match the column: the update route spreads the parsed body
+  // straight into the row.
+  cover_url: z.string().url().nullable().optional(),
 });
 
 export const updateFormSchema = z.object({
@@ -67,6 +73,8 @@ export const updateFormSchema = z.object({
   description: z.string().optional(),
   fields: z.array(fieldSchema).optional(),
   status: formStatusSchema.optional(),
+  theme: z.string().optional(),
+  cover_url: z.string().url().nullable().optional(),
 });
 
 export function newFieldId() {

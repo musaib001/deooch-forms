@@ -13,12 +13,15 @@ import {
 import { OptionsEditor } from "@/components/forms/OptionsEditor";
 import { DeleteFormButton } from "@/components/forms/DeleteFormButton";
 import { ITEM_BY_TYPE } from "./library";
+import { ThemeSwatches } from "@/components/forms/ThemeSwatches";
 
 type Doc = {
   title: string;
   description: string;
   status: FormStatus;
   fields: Field[];
+  theme: string;
+  cover_url: string | null;
 };
 
 const TABS = ["General", "Validation", "Logic", "Advanced"] as const;
@@ -243,6 +246,17 @@ export function Inspector({
             />
           </label>
 
+          <div className="flex flex-col gap-1.5">
+            <span className={labelClass}>Theme</span>
+            <ThemeSwatches
+              size="sm"
+              value={doc.theme}
+              onChange={(theme) => commit({ ...doc, theme }, "theme")}
+            />
+          </div>
+
+          <CoverField formId={formId} doc={doc} commit={commit} />
+
           <label className="flex flex-col gap-1.5">
             <span className={labelClass}>Status</span>
             <select
@@ -290,5 +304,87 @@ export function Inspector({
         </div>
       )}
     </aside>
+  );
+}
+
+// Cover upload needs a saved form to hang the storage object off, so it stays
+// disabled until the first autosave has minted an id.
+function CoverField({
+  formId,
+  doc,
+  commit,
+}: {
+  formId: string | null;
+  doc: Doc;
+  commit: (d: Doc, tag?: string) => void;
+}) {
+  const [uploading, setUploading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  async function onSelect(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file || !formId) return;
+    setError(null);
+    setUploading(true);
+    try {
+      const body = new FormData();
+      body.append("file", file);
+      const res = await fetch(`/api/forms/${formId}/cover`, { method: "POST", body });
+      const json = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(json.error ?? "Upload failed");
+      commit({ ...doc, cover_url: json.url as string }, "cover");
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Upload failed");
+    } finally {
+      setUploading(false);
+    }
+  }
+
+  return (
+    <div className="flex flex-col gap-1.5">
+      <span className={labelClass}>Cover image</span>
+      {doc.cover_url && (
+        // eslint-disable-next-line @next/next/no-img-element
+        <img
+          src={doc.cover_url}
+          alt="Current cover"
+          className="h-20 w-full rounded-lg border border-border object-cover"
+        />
+      )}
+      <label
+        className={
+          "flex h-10 cursor-pointer items-center justify-center rounded-lg border border-dashed border-input bg-background text-sm text-muted-foreground transition-colors hover:border-brand " +
+          (formId ? "" : "pointer-events-none opacity-50")
+        }
+      >
+        <input
+          type="file"
+          accept="image/*"
+          className="sr-only"
+          disabled={!formId || uploading}
+          onChange={onSelect}
+        />
+        {uploading
+          ? "Uploading…"
+          : doc.cover_url
+            ? "Replace image"
+            : "Upload an image"}
+      </label>
+      {!formId && (
+        <p className="text-xs text-muted-foreground">
+          Add a title first — the cover uploads once the form is saved.
+        </p>
+      )}
+      {doc.cover_url && (
+        <button
+          type="button"
+          onClick={() => commit({ ...doc, cover_url: null }, "cover")}
+          className="self-start text-xs font-medium text-muted-foreground hover:text-destructive"
+        >
+          Remove cover
+        </button>
+      )}
+      {error && <p className="text-xs font-medium text-destructive">{error}</p>}
+    </div>
   );
 }
