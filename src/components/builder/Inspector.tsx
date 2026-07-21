@@ -307,6 +307,31 @@ export function Inspector({
   );
 }
 
+// Covers render as a short banner strip, so anything past ~1600px is bytes the
+// respondent downloads for nothing — and a multi-MB body is what fails the
+// upload in the first place. ponytail: canvas downscale, no encoder dependency;
+// reach for one only if EXIF orientation or transparency starts mattering.
+async function shrink(file: File, max = 1600) {
+  if (file.type === "image/gif" || file.type === "image/svg+xml") return file;
+  try {
+    const bitmap = await createImageBitmap(file);
+    const scale = Math.min(1, max / Math.max(bitmap.width, bitmap.height));
+    const canvas = document.createElement("canvas");
+    canvas.width = Math.round(bitmap.width * scale);
+    canvas.height = Math.round(bitmap.height * scale);
+    canvas.getContext("2d")?.drawImage(bitmap, 0, 0, canvas.width, canvas.height);
+    bitmap.close();
+    const blob = await new Promise<Blob | null>((r) =>
+      canvas.toBlob(r, "image/webp", 0.82)
+    );
+    return blob && blob.size < file.size
+      ? new File([blob], "cover.webp", { type: "image/webp" })
+      : file;
+  } catch {
+    return file; // unreadable by the canvas path — let the server judge it
+  }
+}
+
 // Cover upload needs a saved form to hang the storage object off, so it stays
 // disabled until the first autosave has minted an id.
 function CoverField({
@@ -328,15 +353,16 @@ function CoverField({
     setUploading(true);
     try {
       const body = new FormData();
-      body.append("file", file);
+      body.append("file", await shrink(file));
       const res = await fetch(`/api/forms/${formId}/cover`, { method: "POST", body });
       const json = await res.json().catch(() => ({}));
-      if (!res.ok) throw new Error(json.error ?? "Upload failed");
+      if (!res.ok) throw new Error(json.error ?? `Upload failed (${res.status})`);
       commit({ ...doc, cover_url: json.url as string }, "cover");
     } catch (err) {
       setError(err instanceof Error ? err.message : "Upload failed");
     } finally {
       setUploading(false);
+      e.target.value = ""; // so retrying the same file after a failure fires onChange
     }
   }
 
