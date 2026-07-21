@@ -26,6 +26,7 @@ export function TopBar({
 
   const nav: NavItem[] = [
     { href: "/dashboard", label: "Forms" },
+    { href: "/templates", label: "Templates" },
     ...(role === "owner" ? [{ href: "/settings/members", label: "Members" }] : []),
     { href: "/settings/tokens", label: "Connected apps" },
     { href: "/connect", label: "MCP connectors" },

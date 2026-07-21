@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { MarketingNav, MarketingFooter } from "@/components/marketing/MarketingNav";
+import { TemplatesShell } from "@/components/templates/TemplatesShell";
 import { TemplateGallery } from "@/components/templates/TemplateGallery";
 
 export const metadata: Metadata = {
@@ -10,23 +10,19 @@ export const metadata: Metadata = {
 
 export default function TemplatesPage() {
   return (
-    <div className="flex min-h-screen flex-col bg-background">
-      <MarketingNav />
-      <main className="flex-1">
-        <section className="mx-auto max-w-6xl px-6 py-16">
-          <div className="mb-10 text-center">
-            <h1 className="text-4xl font-extrabold tracking-tight text-foreground">
-              Form templates
-            </h1>
-            <p className="mx-auto mt-3 max-w-xl text-lg text-muted-foreground">
-              Start from something that already works. Preview any template, then
-              edit every field to suit you.
-            </p>
-          </div>
-          <TemplateGallery />
-        </section>
-      </main>
-      <MarketingFooter />
-    </div>
+    <TemplatesShell>
+      <section className="mx-auto max-w-6xl px-6 py-16">
+        <div className="mb-10 text-center">
+          <h1 className="text-4xl font-extrabold tracking-tight text-foreground">
+            Form templates
+          </h1>
+          <p className="mx-auto mt-3 max-w-xl text-lg text-muted-foreground">
+            Start from something that already works. Preview any template, then
+            edit every field to suit you.
+          </p>
+        </div>
+        <TemplateGallery />
+      </section>
+    </TemplatesShell>
   );
 }

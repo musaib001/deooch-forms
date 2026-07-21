@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { getSessionProfile } from "@/lib/auth/session";
-import { buttonPrimaryClass } from "@/lib/ui";
+import { buttonPrimaryClass, buttonSecondaryClass } from "@/lib/ui";
 import { quotaFor } from "@/lib/plans";
 import { WorkspaceSidebar } from "@/components/portal/WorkspaceSidebar";
 import { isViewId, type ViewId } from "@/components/portal/views";
@@ -124,19 +124,24 @@ export default async function DashboardPage({
                 Manage, publish, and track responses across your workspace.
               </p>
             </div>
-            {atFormLimit ? (
-              <span
-                title={`Your plan is limited to ${quota.formLimit} forms`}
-                className="cursor-not-allowed rounded-lg border border-border bg-muted px-4 py-2.5 text-sm font-semibold text-muted-foreground"
-              >
-                New form
-              </span>
-            ) : (
-              <Link href="/forms/new" className={buttonPrimaryClass + " shadow-sm"}>
-                <PlusIcon />
-                New form
+            <div className="flex items-center gap-2">
+              <Link href="/templates" className={buttonSecondaryClass}>
+                Browse templates
               </Link>
-            )}
+              {atFormLimit ? (
+                <span
+                  title={`Your plan is limited to ${quota.formLimit} forms`}
+                  className="cursor-not-allowed rounded-lg border border-border bg-muted px-4 py-2.5 text-sm font-semibold text-muted-foreground"
+                >
+                  New form
+                </span>
+              ) : (
+                <Link href="/forms/new" className={buttonPrimaryClass + " shadow-sm"}>
+                  <PlusIcon />
+                  New form
+                </Link>
+              )}
+            </div>
           </div>
 
           {(atFormLimit || atSubmissionLimit) && (
@@ -165,10 +170,15 @@ export default async function DashboardPage({
                 {EMPTY_COPY[view].body}
               </p>
               {view === "all" && (
-                <Link href="/forms/new" className={buttonPrimaryClass + " mt-5"}>
-                  <PlusIcon />
-                  New form
-                </Link>
+                <div className="mt-5 flex flex-wrap justify-center gap-2">
+                  <Link href="/forms/new" className={buttonPrimaryClass}>
+                    <PlusIcon />
+                    New form
+                  </Link>
+                  <Link href="/templates" className={buttonSecondaryClass}>
+                    Start from a template
+                  </Link>
+                </div>
               )}
             </div>
           ) : (
