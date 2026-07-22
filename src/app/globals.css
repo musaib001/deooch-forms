@@ -31,6 +31,18 @@
   --sheet: #15803d;
   --sheet-hover: #166534;
   --sheet-foreground: #ffffff;
+  /* "Ink": the dark marketing band used by the homepage hero and closing CTA.
+     Deliberately not a dark *theme* — the app stays light. These tokens only
+     describe the inverted surface so the two bands can never drift apart.
+     --brand-on-ink is a lifted indigo: --brand itself is only 2.5:1 on --ink,
+     which fails AA for text. */
+  --ink: #0b0a09;
+  --ink-raised: #191714;
+  --ink-border: #2e2a27;
+  --ink-border-hover: #46403b;
+  --ink-foreground: #fafaf9;
+  --ink-muted: #a8a29e;
+  --brand-on-ink: #a5b4fc;
   --radius: 0.75rem;
   color-scheme: light;
 }
@@ -56,6 +68,13 @@
   --color-sheet: var(--sheet);
   --color-sheet-hover: var(--sheet-hover);
   --color-sheet-foreground: var(--sheet-foreground);
+  --color-ink: var(--ink);
+  --color-ink-raised: var(--ink-raised);
+  --color-ink-border: var(--ink-border);
+  --color-ink-border-hover: var(--ink-border-hover);
+  --color-ink-foreground: var(--ink-foreground);
+  --color-ink-muted: var(--ink-muted);
+  --color-brand-on-ink: var(--brand-on-ink);
   --font-sans: var(--font-jakarta);
   --font-mono: var(--font-geist-mono);
   --radius-lg: var(--radius);
@@ -83,6 +102,104 @@ body {
   animation: rise 0.5s cubic-bezier(0.22, 1, 0.36, 1) both;
 }
 
+/* Buttons. These class strings were repeated verbatim a dozen times across the
+   marketing pages; centralising them is the only way the press/focus/hover
+   states stay identical everywhere. Variants set colour only. */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  height: 3rem;
+  padding-inline: 1.75rem;
+  border-radius: var(--radius);
+  font-size: 1rem;
+  font-weight: 600;
+  line-height: 1;
+  white-space: nowrap;
+  cursor: pointer;
+  transition:
+    background-color 100ms ease-out,
+    border-color 100ms ease-out,
+    color 100ms ease-out,
+    box-shadow 100ms ease-out,
+    transform 100ms ease-out;
+}
+
+.btn:focus-visible {
+  outline: 2px solid var(--ring);
+  outline-offset: 2px;
+}
+
+/* Sub-100ms physical feedback on press. */
+.btn:active {
+  transform: translateY(1px);
+}
+
+.btn-sm {
+  height: 2.25rem;
+  padding-inline: 1rem;
+  font-size: 0.875rem;
+}
+
+.btn-brand {
+  background: var(--brand);
+  color: var(--brand-foreground);
+  box-shadow:
+    0 1px 2px rgb(0 0 0 / 0.14),
+    0 8px 24px -10px var(--brand);
+}
+.btn-brand:hover {
+  background: var(--brand-hover);
+}
+
+.btn-outline {
+  border: 1px solid var(--border);
+  background: var(--card);
+  color: var(--foreground);
+}
+.btn-outline:hover {
+  background: var(--muted);
+}
+
+/* Secondary action sitting on an --ink band. */
+.btn-ink {
+  border: 1px solid var(--ink-border);
+  background: color-mix(in oklab, var(--ink-raised) 70%, transparent);
+  color: var(--ink-foreground);
+}
+.btn-ink:hover {
+  background: var(--ink-raised);
+  border-color: var(--ink-border-hover);
+}
+
+/* Faint grid behind the ink bands, faded out with a mask so it never competes
+   with the headline sitting on top of it. */
+.ink-grid {
+  background-image:
+    linear-gradient(to right, var(--ink-border) 1px, transparent 1px),
+    linear-gradient(to bottom, var(--ink-border) 1px, transparent 1px);
+  background-size: 56px 56px;
+  -webkit-mask-image: radial-gradient(ellipse 75% 60% at 50% 0%, #000, transparent 75%);
+  mask-image: radial-gradient(ellipse 75% 60% at 50% 0%, #000, transparent 75%);
+}
+
+/* Typing caret in the hero demo. */
+@keyframes caret-blink {
+  0%,
+  45% {
+    opacity: 1;
+  }
+  55%,
+  100% {
+    opacity: 0;
+  }
+}
+
+.animate-caret {
+  animation: caret-blink 1s steps(1, end) infinite;
+}
+
 @media (prefers-reduced-motion: reduce) {
   *,
   *::before,
@@ -90,5 +207,9 @@ body {
     animation-duration: 0.01ms !important;
     animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
+  }
+
+  .btn:active {
+    transform: none;
   }
 }
